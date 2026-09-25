@@ -1,0 +1,12 @@
+Django>=5.2,<5.3
+djangorestframework>=3.16
+djangorestframework-simplejwt>=5.5
+django-filter>=25.1
+django-cors-headers>=4.7
+django-environ>=0.12
+django-simple-history>=3.8
+drf-spectacular>=0.28
+openpyxl>=3.1
+reportlab>=4.4
+holidays>=0.70
+psycopg[binary]>=3.2

@@ -1,0 +1,46 @@
+# --- Secretos y configuración local ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Backend: datos locales de desarrollo ---
+backend/db.sqlite3
+backend/db.sqlite3-journal
+backend/*.bak
+backend/media/
+backend/staticfiles/
+
+# --- Frontend: dependencias y compilados ---
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# --- Material de trabajo (no forma parte de la aplicación) ---
+# Generador de la documentación técnica (los .docx de la raíz sí se versionan)
+docs/generador/
+# Imagen original del placeholder (en runtime se usa frontend/public/avatar-placeholder.png)
+frontend/Imagenes/
+# Borrador del requerimiento
+Borrador requerimiento sistema de personal.pdf
+
+# --- Logs ---
+*.log
+npm-debug.log*
+
+# --- Editor / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*.docx

@@ -1,0 +1,46 @@
+# Despliegue de Shugo-GEO: PostgreSQL + Django (gunicorn) + nginx (frontend y proxy).
+# Uso: cp .env.example .env  (editar valores)  &&  docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shugo_geo}
+      POSTGRES_USER: ${POSTGRES_USER:-shugo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shugo} -d ${POSTGRES_DB:-shugo_geo}"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-shugo}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-shugo_geo}
+      DJANGO_MEDIA_ROOT: /data/media
+    volumes:
+      - media:/data/media
+      - static:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - static:/static:ro
+      - media:/media-data:ro   # nginx sólo expone /media/fotos/
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  media:
+  static:

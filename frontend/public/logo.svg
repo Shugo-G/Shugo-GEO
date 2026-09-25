@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Logo placeholder hasta definir identidad institucional -->
+  <rect width="64" height="64" rx="14" fill="#1F4E79"/>
+  <circle cx="24" cy="24" r="8" fill="#fff"/>
+  <circle cx="42" cy="26" r="6" fill="#9CC3E6"/>
+  <path d="M10 50c0-8 6.3-14 14-14s14 6 14 14z" fill="#fff"/>
+  <path d="M32 50c0-6 4.5-11 10-11s10 5 10 11z" fill="#9CC3E6"/>
+</svg>

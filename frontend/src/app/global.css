@@ -1,0 +1,526 @@
+:root {
+  --color-primario: #1f4e79;
+  --color-fondo: #f3f5f8;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fondo);
+}
+
+/* ---------- Login ---------- */
+.login-fondo {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #0f2a44 0%, var(--color-primario) 60%, #2e75b6 100%);
+}
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- Layout ---------- */
+.app-sider {
+  position: sticky !important;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 64px;
+  padding: 0 20px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.app-logo-texto {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  overflow: hidden;
+}
+.app-logo-nombre {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+}
+.app-logo-desc {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  line-height: 1.25;
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px !important;
+  border-bottom: 1px solid #e8ebf0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.app-header-toggle {
+  font-size: 18px;
+  cursor: pointer;
+}
+.app-header-organismo {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-header-usuario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.app-content {
+  padding: 24px;
+}
+@media (max-width: 768px) {
+  .app-content {
+    padding: 12px;
+  }
+  .app-header-organismo {
+    display: none;
+  }
+}
+
+/* ---------- Encabezado de página ---------- */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.page-header h3 {
+  margin: 0 !important;
+}
+
+/* ---------- Dashboard ---------- */
+.kpi-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border-top: 3px solid transparent;
+  height: 100%;
+}
+.kpi-card:hover {
+  box-shadow: 0 6px 18px rgba(15, 42, 68, 0.12);
+  transform: translateY(-1px);
+}
+.kpi-card.activa {
+  box-shadow: 0 0 0 2px var(--color-primario);
+}
+.kpi-card .ant-statistic-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Grilla de período ---------- */
+.grilla-wrapper {
+  overflow-x: auto;
+}
+.grilla {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  min-width: 100%;
+}
+.grilla th,
+.grilla td {
+  border-bottom: 1px solid #f0f0f0;
+  border-right: 1px solid #f5f5f5;
+  padding: 0;
+  text-align: center;
+  height: 30px;
+  min-width: 30px;
+}
+.grilla th {
+  background: #fafafa;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 4px 0;
+}
+.grilla .col-empleado {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+  text-align: left;
+  padding: 0 12px;
+  min-width: 200px;
+  white-space: nowrap;
+}
+.grilla th.col-empleado {
+  background: #fafafa;
+  z-index: 3;
+}
+.grilla .no-habil {
+  background: #f5f5f5;
+}
+.grilla .hoy {
+  box-shadow: inset 0 0 0 2px var(--color-primario);
+}
+.grilla .celda {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+.grilla .celda span {
+  flex: 1;
+}
+.grilla tfoot td {
+  font-weight: 600;
+  background: #fafafa;
+}
+
+/* ---------- Calendario ---------- */
+.fc {
+  --fc-border-color: #eef0f3;
+  --fc-today-bg-color: rgba(31, 78, 121, 0.06);
+  font-size: 13px;
+}
+.fc .fc-toolbar-title {
+  font-size: 18px;
+}
+.fc .fc-toolbar-title::first-letter {
+  text-transform: uppercase;
+}
+.fc .fc-bg-event {
+  opacity: 0.18;
+}
+.fc .fc-bg-event .fc-event-title {
+  font-size: 10.5px;
+  font-style: normal;
+  color: #595959;
+  margin: 2px 4px;
+}
+.fc-event {
+  cursor: pointer;
+}
+
+/* Licencias anuladas: se conservan como registro, atenuadas */
+.fila-anulada td {
+  color: #a6a6a6;
+}
+.fila-anulada td:not(:last-child) .ant-badge-status-text {
+  color: #a6a6a6;
+  text-decoration: line-through;
+}
+
+/* ---------- Dashboard: columnas por dirección ---------- */
+.columnas-direccion {
+  display: grid;
+  gap: 16px;
+  overflow-x: auto;
+  padding-top: 4px;
+}
+.columna-direccion {
+  background: #f7f8fa;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  min-width: 0;
+}
+.columna-direccion > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef0f3;
+  position: sticky;
+  top: 0;
+}
+.columna-direccion-conteo {
+  font-size: 13px;
+  white-space: nowrap;
+  background: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  border: 1px solid #eef0f3;
+}
+.columna-direccion-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+/* Tarjeta cuadrada: foto arriba, datos debajo; la franja superior indica el estado. */
+.tarjeta-agente {
+  /* Cuadrada; si el contenido no entra (varias novedades) crece en alto en lugar de cortarse. */
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  padding: 10px 8px;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px solid #eef0f3;
+  border-top: 5px solid;
+  background: #fff;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  min-width: 0;
+}
+.tarjeta-agente:hover,
+.tarjeta-agente:focus-visible {
+  box-shadow: 0 4px 14px rgba(15, 42, 68, 0.12);
+  transform: translateY(-1px);
+  outline: none;
+}
+.tarjeta-agente img {
+  margin: 4px 0 6px;
+  box-shadow: 0 0 0 3px #fff;
+}
+.tarjeta-agente-nombre {
+  max-width: 100%;
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+.tarjeta-agente-area {
+  max-width: 100%;
+  font-size: 11.5px;
+}
+.tarjeta-agente-estado {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+}
+.tarjeta-agente-novedad {
+  line-height: 1.25;
+}
+.tarjeta-agente-novedad .ant-badge-status-text,
+.tarjeta-agente-estado > .ant-badge .ant-badge-status-text {
+  font-size: 12.5px;
+}
+.tarjeta-agente-fechas {
+  font-size: 11px;
+  color: #8c8c8c;
+}
+@media (max-width: 992px) {
+  .columnas-direccion {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ---------- Calendario: vista mensual por día ---------- */
+.fc .fc-daygrid-day-frame {
+  min-height: 108px;
+  padding: 0;
+}
+.fc .fc-daygrid-day-top {
+  display: block;
+  flex-direction: initial;
+  height: 100%;
+}
+/* El contenido del día va dentro del enlace del número: que ocupe toda la celda. */
+.fc .fc-daygrid-day-top .fc-daygrid-day-number {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.fc .fc-daygrid-day-events,
+.fc .fc-daygrid-day-bottom {
+  display: none;
+}
+.fc .fc-daygrid-day {
+  cursor: pointer;
+}
+.fc .fc-daygrid-day:hover .celda-dia {
+  box-shadow: inset 0 0 0 2px rgba(31, 78, 121, 0.35);
+}
+.celda-dia {
+  height: 100%;
+  min-height: 108px;
+  box-sizing: border-box;
+  padding: 4px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: box-shadow 0.15s;
+}
+.celda-dia-no-laborable {
+  background: repeating-linear-gradient(135deg, #fafafa, #fafafa 6px, #f3f3f3 6px, #f3f3f3 12px);
+}
+.celda-dia-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+.celda-dia-numero {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f1f1f;
+  min-width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 14px;
+}
+.celda-dia-numero.hoy {
+  background: var(--color-primario);
+  color: #fff;
+  font-weight: 600;
+}
+.celda-dia-feriado {
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: #ad6800;
+  background: #fff7e6;
+  border-radius: 4px;
+  padding: 1px 4px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.celda-dia-conteo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #cf1322;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.celda-dia-etiquetas {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.celda-dia-etiqueta {
+  display: block;
+  font-size: 11.5px;
+  line-height: 17px;
+  padding: 0 5px;
+  border-left: 3px solid;
+  border-radius: 3px;
+  color: #262626;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.celda-dia-mas {
+  font-size: 11px;
+  font-weight: 600;
+  color: #595959;
+  padding-left: 5px;
+}
+.fc-day-other .celda-dia {
+  opacity: 0.45;
+}
+.leyenda-tinte {
+  font-size: 13px;
+  padding: 1px 10px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(245, 34, 45, 0.05), rgba(245, 34, 45, 0.3));
+}
+.calendario-navegacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.grilla .col-empleado img {
+  vertical-align: middle;
+}
+
+/* Calendario mensual: divisiones de días más marcadas y encabezado destacado */
+.fc .fc-daygrid-day,
+.fc .fc-col-header-cell,
+.fc .fc-scrollgrid {
+  border-color: #c9ced6 !important;
+}
+.fc .fc-col-header-cell {
+  background: #f0f3f7;
+}
+.fc .fc-col-header-cell-cushion {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f4e79;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 4px;
+}
+/* Días de otros meses: número más tenue para no confundir */
+.fc-day-other .celda-dia-numero {
+  color: #8c8c8c;
+  font-weight: 500;
+}
+/* Fines de semana y feriados: número en gris azulado */
+.celda-dia-no-laborable .celda-dia-numero {
+  color: #6b7a8c;
+}
+
+/* Saldos de la ficha: subtotales y total */
+.saldo-fila-subtotal td {
+  background: #fafafa;
+}
+.saldo-fila-total td {
+  background: #eef3f8 !important;
+  border-top: 2px solid #c9d6e3;
+}
+.tabla-saldos .ant-table {
+  font-size: 13px;
+}
+.tabla-saldos .ant-table-thead > tr > th,
+.tabla-saldos .ant-table-tbody > tr > td {
+  padding: 6px 6px !important;
+}
+.tabla-saldos .ant-table-row-expand-icon-cell {
+  width: 28px;
+  padding: 0 !important;
+}
+
+/* Calendario: referencias de colores en tarjetas (mismo estilo que el dashboard) */
+.leyenda-punto {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.leyenda-tinte-barra {
+  display: inline-block;
+  width: 100%;
+  min-width: 90px;
+  height: 22px;
+  margin-top: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(245, 34, 45, 0.05), rgba(245, 34, 45, 0.3));
+}
+.leyenda-tinte-card .ant-statistic-content {
+  display: flex;
+}
+.leyenda-tinte-card .ant-statistic-content-value {
+  flex: 1;
+}
+
+/* Patrimonio: cargos cerrados (historial) atenuados */
+.fila-cargo-cerrado td {
+  color: #8c8c8c;
+}
