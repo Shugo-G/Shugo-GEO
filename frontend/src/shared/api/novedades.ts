@@ -1,14 +1,9 @@
 import { api } from '@/core/api/client';
 import { crearRecurso } from '@/core/api/crud';
+import type { DocumentoAdjunto } from '@/core/api/types';
 
-export interface DocumentoNovedad {
-  id: number;
+export interface DocumentoNovedad extends DocumentoAdjunto {
   novedad: number;
-  nombre_original: string;
-  descripcion: string;
-  subido: string;
-  subido_por_nombre: string | null;
-  tamanio: number | null;
 }
 
 export type EstadoNovedad = 'PROGRAMADA' | 'EN_CURSO' | 'FINALIZADA' | 'INTERRUMPIDA' | 'ANULADA';

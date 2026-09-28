@@ -10,14 +10,12 @@ Novedades del personal: vacaciones, licencias, ausencias, comisiones, etc.
 
 El estado del día de cada empleado se deriva de las novedades vigentes.
 """
-import os
-import uuid
-
 from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
 
 from apps.calendario.services import ComputoDias
+from apps.core.archivos import ruta_adjunto
 from apps.core.models import CatalogoBase, TimeStampedModel
 
 
@@ -206,14 +204,11 @@ class Novedad(TimeStampedModel):
 
 
 def _ruta_documento(instance, filename):
-    extension = os.path.splitext(filename)[1].lower()
-    return f"novedades/{instance.novedad.fecha_desde:%Y/%m}/{uuid.uuid4().hex}{extension}"
+    return ruta_adjunto("novedades", filename, instance.novedad.fecha_desde)
 
 
 class DocumentoNovedad(models.Model):
     """Documentación respaldatoria (certificados, notas, resoluciones)."""
-
-    EXTENSIONES_PERMITIDAS = [".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".odt"]
 
     novedad = models.ForeignKey(Novedad, on_delete=models.CASCADE, related_name="documentos")
     archivo = models.FileField("archivo", upload_to=_ruta_documento)

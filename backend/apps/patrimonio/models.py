@@ -9,10 +9,16 @@ y motivo, de modo que el IUB permite reconstruir la trayectoria del bien:
     - Transferencia a un área ajena a Informática: se cierra con ese destino y
       el bien queda sin agente a cargo.
     - Baja: el insumo queda fuera de servicio; su IUB no puede volver a asignarse.
+
+Cada cargo tiene sus archivos (planilla de cargo firmada, actas): al transferir a
+otro empleado los de la planilla nueva van al cargo nuevo y los anteriores quedan
+en el cargo cerrado como referencia.
 """
+from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
 
+from apps.core.archivos import ruta_adjunto
 from apps.core.models import CatalogoBase, TimeStampedModel
 
 
@@ -83,3 +89,26 @@ class CargoPatrimonial(TimeStampedModel):
         if not self.legajo and self.empleado_id:
             self.legajo = self.empleado.legajo
         super().save(*args, **kwargs)
+
+
+def _ruta_documento(instance, filename):
+    return ruta_adjunto("patrimonio", filename)
+
+
+class DocumentoCargo(models.Model):
+    """Archivo de un cargo: planilla de cargo firmada, acta de transferencia o de baja, fotos del bien."""
+
+    cargo = models.ForeignKey(CargoPatrimonial, on_delete=models.CASCADE, related_name="documentos")
+    archivo = models.FileField("archivo", upload_to=_ruta_documento)
+    nombre_original = models.CharField("nombre", max_length=255)
+    descripcion = models.CharField("descripción", max_length=255, blank=True)
+    subido = models.DateTimeField("subido", auto_now_add=True)
+    subido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        verbose_name = "documento de cargo"
+        verbose_name_plural = "documentos de cargo"
+        ordering = ["-subido"]
+
+    def __str__(self):
+        return self.nombre_original

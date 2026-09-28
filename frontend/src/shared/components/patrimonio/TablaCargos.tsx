@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { App, Button, Popconfirm, Space, Table, Tag, Tooltip, Typography, type TableColumnsType, type TableProps } from 'antd';
-import { DeleteOutlined, EditOutlined, StopOutlined, SwapOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PaperClipOutlined, StopOutlined, SwapOutlined } from '@ant-design/icons';
 import { mensajeError } from '@/core/api/client';
 import { usePermiso } from '@/core/auth/AuthContext';
 import { fmtFecha } from '@/core/utils/format';
 import { cargosApi, type CargoPatrimonial } from '@/shared/api/patrimonio';
 import CargoFormModal from './CargoFormModal';
 import CierreCargoModal, { type AccionCierre } from './CierreCargoModal';
+import { DocumentosCargoModal, PERMISOS_DOCUMENTOS_CARGO } from './DocumentosCargo';
 
 interface Props extends Pick<TableProps<CargoPatrimonial>, 'loading' | 'pagination' | 'onChange'> {
   cargos: CargoPatrimonial[];
@@ -36,6 +37,8 @@ export default function TablaCargos({ cargos, mostrarResponsable = false, ...tab
   const { message } = App.useApp();
   const puedeEditar = usePermiso('patrimonio.change_cargopatrimonial');
   const puedeEliminar = usePermiso('patrimonio.delete_cargopatrimonial');
+  const puedeVerArchivos = usePermiso(PERMISOS_DOCUMENTOS_CARGO.ver);
+  const [archivos, setArchivos] = useState<CargoPatrimonial | null>(null);
   const eliminar = cargosApi.useEliminar();
   const [editando, setEditando] = useState<CargoPatrimonial | null>(null);
   const [cierre, setCierre] = useState<{ cargo: CargoPatrimonial | null; accion: AccionCierre }>({ cargo: null, accion: 'baja' });
@@ -52,6 +55,7 @@ export default function TablaCargos({ cargos, mostrarResponsable = false, ...tab
             dataIndex: 'empleado_nombre',
             key: 'empleado__apellido',
             sorter: true,
+            width: 210,
             render: (t: string, c: CargoPatrimonial) => (
               <>
                 <Link to={`/personal/${c.empleado}`}>{t}</Link>
@@ -67,6 +71,29 @@ export default function TablaCargos({ cargos, mostrarResponsable = false, ...tab
       : ([{ title: 'Legajo', dataIndex: 'legajo', width: 90 }] as TableColumnsType<CargoPatrimonial>)),
     { title: 'Asignado', dataIndex: 'fecha_asignacion', key: 'fecha_asignacion', sorter: mostrarResponsable, width: 105, render: fmtFecha },
     { title: 'Estado', key: 'estado', width: 220, render: (_, c) => <EstadoCargo cargo={c} /> },
+    ...(puedeVerArchivos
+      ? ([
+          {
+            title: 'Archivos',
+            key: 'archivos',
+            width: 90,
+            align: 'center',
+            render: (_: unknown, c: CargoPatrimonial) => (
+              <Tooltip title={c.documentos_count ? 'Ver archivos' : 'Sin archivos: adjuntar la planilla'}>
+                <Button
+                  type={c.documentos_count ? 'link' : 'text'}
+                  size="small"
+                  icon={<PaperClipOutlined />}
+                  onClick={() => setArchivos(c)}
+                  style={c.documentos_count ? undefined : { color: 'var(--ant-color-text-quaternary, #bfbfbf)' }}
+                >
+                  {c.documentos_count || ''}
+                </Button>
+              </Tooltip>
+            ),
+          },
+        ] as TableColumnsType<CargoPatrimonial>)
+      : []),
     {
       key: 'acciones',
       width: 130,
@@ -109,12 +136,13 @@ export default function TablaCargos({ cargos, mostrarResponsable = false, ...tab
         size="small"
         columns={columnas}
         dataSource={cargos}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1250 }}
         rowClassName={(c) => (c.vigente ? '' : 'fila-cargo-cerrado')}
         {...tabla}
       />
       <CargoFormModal open={!!editando} cargo={editando} onClose={() => setEditando(null)} />
       <CierreCargoModal cargo={cierre.cargo} accion={cierre.accion} onClose={() => setCierre({ cargo: null, accion: 'baja' })} />
+      <DocumentosCargoModal cargo={archivos} onClose={() => setArchivos(null)} />
     </>
   );
 }

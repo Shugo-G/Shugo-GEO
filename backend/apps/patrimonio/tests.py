@@ -120,3 +120,93 @@ class CargoPatrimonialTests(TestCase):
         self.assertEqual({f["legajo"] for f in filas}, {"501"})
         for formato in ("xlsx", "pdf"):
             self.assertEqual(consulta.get("/api/reportes/cargos_patrimoniales/", {"formato": formato}).status_code, 200)
+
+
+class DocumentosCargoTests(TestCase):
+    """Archivos de cada cargo: planilla de la asignación y de cada transferencia."""
+
+    def setUp(self):
+        import tempfile
+
+        from django.test import override_settings
+
+        self.media = tempfile.TemporaryDirectory()
+        self.override = override_settings(MEDIA_ROOT=self.media.name)
+        self.override.enable()
+        self.d = datos_base()
+        seeds.cargar()
+        self.api = cliente()
+        self.ana = crear_empleado(self.d["area"], self.d["planta"], 1, legajo="501")
+        self.juan = crear_empleado(self.d["area"], self.d["planta"], 2, legajo="502")
+        datos = {
+            "empleado": self.ana.id,
+            "tipo_insumo": TipoInsumo.objects.get(nombre="CPU").id,
+            "planilla_cargo": "PC-100",
+            "iub": "IUB-1",
+            "fecha_asignacion": "2026-03-01",
+        }
+        self.cargo = self.api.post("/api/patrimonio/cargos/", datos, format="json").data
+
+    def tearDown(self):
+        self.override.disable()
+        self.media.cleanup()
+
+    def subir(self, cargo_id, nombre="planilla.pdf", api=None):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        archivo = SimpleUploadedFile(nombre, b"%PDF-1.4 planilla", content_type="application/pdf")
+        return (api or self.api).post("/api/patrimonio/documentos/", {"cargo": cargo_id, "archivo": archivo}, format="multipart")
+
+    def test_subir_listar_y_descargar(self):
+        r = self.subir(self.cargo["id"])
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data["nombre_original"], "planilla.pdf")
+        lista = self.api.get("/api/patrimonio/documentos/", {"cargo": self.cargo["id"]}).data
+        self.assertEqual(len(lista), 1)
+        self.assertEqual(self.api.get(f"/api/patrimonio/cargos/{self.cargo['id']}/").data["documentos_count"], 1)
+        descarga = self.api.get(f"/api/patrimonio/documentos/{r.data['id']}/descargar/")
+        self.assertEqual(descarga.status_code, 200)
+        self.assertEqual(b"".join(descarga.streaming_content), b"%PDF-1.4 planilla")
+
+    def test_formato_no_permitido(self):
+        r = self.subir(self.cargo["id"], "script.exe")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("archivo", r.data)
+
+    def test_transferencia_los_archivos_nuevos_van_al_cargo_nuevo(self):
+        self.subir(self.cargo["id"], "planilla-100.pdf")
+        r = self.api.post(
+            f"/api/patrimonio/cargos/{self.cargo['id']}/transferir/",
+            {"empleado": self.juan.id, "planilla_cargo": "PC-200", "fecha": "2026-06-01"},
+            format="json",
+        )
+        nuevo_id = r.data["transferido_a"]
+        self.assertIsNotNone(nuevo_id)
+        self.assertEqual(self.subir(nuevo_id, "planilla-200.pdf").status_code, 201)
+        por_cargo = {
+            c: [d["nombre_original"] for d in self.api.get("/api/patrimonio/documentos/", {"cargo": c}).data]
+            for c in (self.cargo["id"], nuevo_id)
+        }
+        # La planilla anterior queda como referencia en el cargo cerrado.
+        self.assertEqual(por_cargo, {self.cargo["id"]: ["planilla-100.pdf"], nuevo_id: ["planilla-200.pdf"]})
+
+    def test_consulta_ve_y_descarga_pero_no_sube(self):
+        doc = self.subir(self.cargo["id"]).data
+        consulta = cliente(ROL_CONSULTA)
+        self.assertEqual(consulta.get("/api/patrimonio/documentos/", {"cargo": self.cargo["id"]}).status_code, 200)
+        self.assertEqual(consulta.get(f"/api/patrimonio/documentos/{doc['id']}/descargar/").status_code, 200)
+        self.assertEqual(self.subir(self.cargo["id"], api=consulta).status_code, 403)
+        self.assertEqual(consulta.delete(f"/api/patrimonio/documentos/{doc['id']}/").status_code, 403)
+
+    def test_eliminar_documento_y_cargo_borra_los_archivos(self):
+        import os
+
+        from .models import DocumentoCargo
+
+        uno = self.subir(self.cargo["id"], "a.pdf").data
+        self.subir(self.cargo["id"], "b.pdf")
+        rutas = [d.archivo.path for d in DocumentoCargo.objects.all()]
+        self.assertEqual(self.api.delete(f"/api/patrimonio/documentos/{uno['id']}/").status_code, 204)
+        self.assertEqual(self.api.delete(f"/api/patrimonio/cargos/{self.cargo['id']}/").status_code, 204)
+        self.assertFalse(any(os.path.exists(r) for r in rutas))
+        self.assertFalse(DocumentoCargo.objects.exists())

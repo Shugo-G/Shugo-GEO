@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/core/api/client';
 import { crearRecurso, limpiarParams } from '@/core/api/crud';
-import type { Catalogo, Params } from '@/core/api/types';
+import type { Catalogo, DocumentoAdjunto, Params } from '@/core/api/types';
 
 export type TipoInsumo = Catalogo;
 
@@ -27,6 +27,9 @@ export interface CargoPatrimonial {
   tipo_cierre_display: string;
   destino: string;
   motivo_cierre: string;
+  /** Cargo abierto para el receptor en una transferencia a otro empleado. */
+  transferido_a: number | null;
+  documentos_count: number;
   creado: string;
   creado_por_nombre: string | null;
 }
@@ -59,3 +62,22 @@ export function useResumenPatrimonio(params: Params) {
       (await api.get<ResumenPatrimonio>('/patrimonio/cargos/resumen/', { params: limpiarParams(params) })).data,
   });
 }
+
+export interface DocumentoCargo extends DocumentoAdjunto {
+  cargo: number;
+}
+
+/** Archivos de un cargo: planilla de cargo firmada, actas de transferencia o baja. */
+export const documentosCargoApi = {
+  listar: async (cargo: number) =>
+    (await api.get<DocumentoCargo[]>('/patrimonio/documentos/', { params: { cargo } })).data,
+  subir: async (cargo: number, archivo: File, descripcion = '') => {
+    const datos = new FormData();
+    datos.append('cargo', String(cargo));
+    datos.append('archivo', archivo);
+    datos.append('descripcion', descripcion);
+    return (await api.post<DocumentoCargo>('/patrimonio/documentos/', datos)).data;
+  },
+  eliminar: async (id: number) => api.delete(`/patrimonio/documentos/${id}/`),
+  urlDescarga: (id: number) => `/patrimonio/documentos/${id}/descargar/`,
+};

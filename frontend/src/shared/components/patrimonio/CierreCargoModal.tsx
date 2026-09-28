@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Alert, App, DatePicker, Descriptions, Form, Input, Modal, Segmented } from 'antd';
+import { Alert, App, DatePicker, Descriptions, Form, Input, Modal, Segmented, type UploadFile } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs, { type Dayjs } from 'dayjs';
 import { erroresDeCampos, mensajeError } from '@/core/api/client';
 import { FORMATO_FECHA, aApi, fmtFecha } from '@/core/utils/format';
-import { darDeBajaCargo, transferirCargo, type CargoPatrimonial } from '@/shared/api/patrimonio';
+import { usePermiso } from '@/core/auth/AuthContext';
+import { darDeBajaCargo, documentosCargoApi, transferirCargo, type CargoPatrimonial } from '@/shared/api/patrimonio';
+import { AdjuntosPendientes, subirPendientes } from '@/shared/components/ListaDocumentos';
 import { EmpleadoSelect } from '@/shared/components/Selects';
+import { PERMISOS_DOCUMENTOS_CARGO } from './DocumentosCargo';
 
 export type AccionCierre = 'baja' | 'transferir';
 
@@ -21,6 +24,7 @@ interface Valores {
   empleado?: number;
   area_externa?: string;
   planilla_cargo?: string;
+  adjuntos?: UploadFile[];
 }
 
 /**
@@ -30,6 +34,10 @@ interface Valores {
  *   con el mismo IUB y una planilla de cargo nueva.
  * - Transferir a otra área (ajena a Informática): se cierra con ese destino; el bien queda sin agente.
  * En todos los casos el cargo queda en el historial.
+ *
+ * Archivos: en la transferencia a otro empleado van al cargo nuevo (nueva planilla);
+ * en la baja o la transferencia a otra área, al cargo que se cierra (actas, notas).
+ * Los archivos anteriores quedan en el cargo cerrado como referencia.
  */
 export default function CierreCargoModal({ cargo, accion, onClose }: Props) {
   const [form] = Form.useForm<Valores>();
@@ -37,6 +45,7 @@ export default function CierreCargoModal({ cargo, accion, onClose }: Props) {
   const qc = useQueryClient();
   const [destino, setDestino] = useState<'empleado' | 'area'>('empleado');
   const [guardando, setGuardando] = useState(false);
+  const puedeAdjuntar = usePermiso(PERMISOS_DOCUMENTOS_CARGO.subir);
 
   useEffect(() => {
     if (!cargo) return;
@@ -51,16 +60,23 @@ export default function CierreCargoModal({ cargo, accion, onClose }: Props) {
     setGuardando(true);
     try {
       const base = { fecha: aApi(v.fecha)!, motivo: v.motivo ?? '' };
+      let cerrado: CargoPatrimonial;
+      let exito: string;
       if (accion === 'baja') {
-        await darDeBajaCargo(cargo.id, base);
-        message.success('Bien dado de baja');
+        cerrado = await darDeBajaCargo(cargo.id, base);
+        exito = 'Bien dado de baja';
       } else if (destino === 'empleado') {
-        await transferirCargo(cargo.id, { ...base, empleado: v.empleado, planilla_cargo: v.planilla_cargo });
-        message.success('Bien transferido');
+        cerrado = await transferirCargo(cargo.id, { ...base, empleado: v.empleado, planilla_cargo: v.planilla_cargo });
+        exito = 'Bien transferido';
       } else {
-        await transferirCargo(cargo.id, { ...base, area_externa: v.area_externa });
-        message.success('Bien transferido a otra área');
+        cerrado = await transferirCargo(cargo.id, { ...base, area_externa: v.area_externa });
+        exito = 'Bien transferido a otra área';
       }
+      const fallidos = v.adjuntos?.length
+        ? await subirPendientes(v.adjuntos, (archivo) => documentosCargoApi.subir(cerrado.transferido_a ?? cerrado.id, archivo))
+        : [];
+      if (fallidos.length) message.warning(`${exito}, pero no se pudo adjuntar: ${fallidos.join(', ')}. Puede hacerlo desde la tabla (Archivos).`);
+      else message.success(exito);
       qc.invalidateQueries();
       onClose();
     } catch (e) {
@@ -160,6 +176,25 @@ export default function CierreCargoModal({ cargo, accion, onClose }: Props) {
             <Form.Item name="motivo" label={accion === 'baja' ? 'Motivo de la baja' : 'Motivo / observaciones'}>
               <Input maxLength={255} />
             </Form.Item>
+            {puedeAdjuntar && (
+              <Form.Item
+                name="adjuntos"
+                label={
+                  accion === 'baja'
+                    ? 'Acta de baja u otros archivos'
+                    : destino === 'empleado'
+                      ? 'Nueva planilla de cargo firmada'
+                      : 'Acta o nota de transferencia'
+                }
+                extra={
+                  accion === 'transferir' && destino === 'empleado'
+                    ? 'Opcional. Se adjunta al cargo nuevo; la planilla anterior queda en el historial como referencia.'
+                    : 'Opcional. Se adjunta a este cargo, que queda en el historial.'
+                }
+              >
+                <AdjuntosPendientes />
+              </Form.Item>
+            )}
           </Form>
         </>
       )}

@@ -89,6 +89,19 @@ export interface DiaNoLaborable {
   observaciones: string;
 }
 
+/** Archivo adjunto (documentación de licencias, planillas de cargo...). Se descarga sólo por la API. */
+export interface DocumentoAdjunto {
+  id: number;
+  nombre_original: string;
+  descripcion: string;
+  subido: string;
+  subido_por_nombre: string | null;
+  tamanio: number | null;
+}
+
+/** Formatos aceptados por el backend (apps/core/archivos.py). */
+export const FORMATOS_ADJUNTO = '.pdf,.jpg,.jpeg,.png,.doc,.docx,.odt';
+
 export interface CambioHistorial {
   fecha: string;
   tipo: string;

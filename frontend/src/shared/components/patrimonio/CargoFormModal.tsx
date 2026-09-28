@@ -1,10 +1,14 @@
-import { useEffect } from 'react';
-import { Alert, App, Col, DatePicker, Form, Input, Modal, Row, Select } from 'antd';
+import { useEffect, useState } from 'react';
+import { Alert, App, Col, DatePicker, Divider, Form, Input, Modal, Row, Select, type UploadFile } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { erroresDeCampos, mensajeError } from '@/core/api/client';
 import { FORMATO_FECHA, aApi, deApi } from '@/core/utils/format';
 import { cargosApi, insumosApi, type CargoPatrimonial } from '@/shared/api/patrimonio';
+import { usePermiso } from '@/core/auth/AuthContext';
+import { documentosCargoApi } from '@/shared/api/patrimonio';
+import { AdjuntosPendientes, subirPendientes } from '@/shared/components/ListaDocumentos';
 import { EmpleadoSelect } from '@/shared/components/Selects';
+import DocumentosCargo, { PERMISOS_DOCUMENTOS_CARGO } from './DocumentosCargo';
 
 interface Props {
   open: boolean;
@@ -22,6 +26,7 @@ interface Valores {
   iub?: string;
   descripcion?: string;
   fecha_asignacion: Dayjs;
+  adjuntos?: UploadFile[];
 }
 
 /** Asignación de un bien a un agente (o corrección de sus datos). */
@@ -31,6 +36,8 @@ export default function CargoFormModal({ open, onClose, cargo, empleadoId }: Pro
   const guardar = cargosApi.useGuardar();
   const { data: insumos = [] } = insumosApi.useTodos({ activo: true });
   const cerrado = !!cargo && !cargo.vigente;
+  const puedeAdjuntar = usePermiso(PERMISOS_DOCUMENTOS_CARGO.subir);
+  const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +52,7 @@ export default function CargoFormModal({ open, onClose, cargo, empleadoId }: Pro
   const onGuardar = async () => {
     const v = await form.validateFields();
     try {
-      await guardar.mutateAsync({
+      const resultado = await guardar.mutateAsync({
         id: cargo?.id,
         empleado: v.empleado,
         tipo_insumo: v.tipo_insumo,
@@ -54,6 +61,16 @@ export default function CargoFormModal({ open, onClose, cargo, empleadoId }: Pro
         descripcion: v.descripcion ?? '',
         fecha_asignacion: aApi(v.fecha_asignacion)!,
       });
+      if (!cargo && v.adjuntos?.length) {
+        setSubiendo(true);
+        const fallidos = await subirPendientes(v.adjuntos, (archivo) => documentosCargoApi.subir(resultado.id, archivo));
+        setSubiendo(false);
+        if (fallidos.length) {
+          message.warning(`Bien asignado, pero no se pudo adjuntar: ${fallidos.join(', ')}. Puede hacerlo desde Editar.`);
+          onClose();
+          return;
+        }
+      }
       message.success(cargo ? 'Cargo actualizado' : 'Bien asignado');
       onClose();
     } catch (e) {
@@ -70,7 +87,7 @@ export default function CargoFormModal({ open, onClose, cargo, empleadoId }: Pro
       onCancel={onClose}
       onOk={onGuardar}
       okText="Guardar"
-      confirmLoading={guardar.isPending}
+      confirmLoading={guardar.isPending || subiendo}
       width={620}
       destroyOnHidden
     >
@@ -135,6 +152,24 @@ export default function CargoFormModal({ open, onClose, cargo, empleadoId }: Pro
         <Form.Item name="descripcion" label="Descripción">
           <Input.TextArea rows={3} placeholder="Marca, modelo, número de serie, detalles..." />
         </Form.Item>
+        {cargo ? (
+          <>
+            <Divider orientation="left" plain>
+              Archivos (planilla de cargo {cargo.planilla_cargo})
+            </Divider>
+            <DocumentosCargo cargoId={cargo.id} />
+          </>
+        ) : (
+          puedeAdjuntar && (
+            <Form.Item
+              name="adjuntos"
+              label="Planilla de cargo y otros archivos"
+              extra="Opcional. PDF, imágenes o documentos de texto: quedan como referencia de esta asignación."
+            >
+              <AdjuntosPendientes />
+            </Form.Item>
+          )
+        )}
       </Form>
     </Modal>
   );

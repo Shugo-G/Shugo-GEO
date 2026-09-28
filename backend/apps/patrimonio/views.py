@@ -1,16 +1,18 @@
 import django_filters
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.archivos import descargar_adjunto
 from apps.core.fechas import hoy, parse_fecha_param
 from apps.core.viewsets import AuditedModelViewSet, CatalogoViewSet
 from apps.organizacion.selectors import unidades_con_descendientes
 from apps.personal.models import Empleado
 
-from .models import CargoPatrimonial, TipoCierre, TipoInsumo
-from .serializers import CargoPatrimonialSerializer, TipoInsumoSerializer
+from .models import CargoPatrimonial, DocumentoCargo, TipoCierre, TipoInsumo
+from .serializers import CargoPatrimonialSerializer, DocumentoCargoSerializer, TipoInsumoSerializer
 from .services import dar_de_baja, transferir
 
 
@@ -40,11 +42,17 @@ class CargoFilter(django_filters.FilterSet):
 
 
 class CargoPatrimonialViewSet(AuditedModelViewSet):
-    queryset = CargoPatrimonial.objects.con_relaciones()
+    queryset = CargoPatrimonial.objects.con_relaciones().annotate(cantidad_documentos=Count("documentos"))
     serializer_class = CargoPatrimonialSerializer
     filterset_class = CargoFilter
     search_fields = ["iub", "planilla_cargo", "descripcion", "legajo", "empleado__apellido", "empleado__nombre", "destino"]
     ordering_fields = ["fecha_asignacion", "fecha_cierre", "iub", "empleado__apellido", "tipo_insumo__nombre"]
+
+    def perform_destroy(self, instance):
+        # Error de carga: se borra el registro con sus archivos.
+        for documento in instance.documentos.all():
+            documento.archivo.delete(save=False)
+        instance.delete()
 
     def _exigir_edicion(self, request):
         if not request.user.has_perm("patrimonio.change_cargopatrimonial"):
@@ -97,3 +105,30 @@ class CargoPatrimonialViewSet(AuditedModelViewSet):
     @action(detail=False, methods=["get"])
     def cierres(self, request):
         return Response([{"value": v, "label": l} for v, l in TipoCierre.choices])
+
+
+class DocumentoCargoViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Archivos de un cargo (planilla de cargo, actas). Se descargan sólo por la API."""
+
+    queryset = DocumentoCargo.objects.select_related("subido_por")
+    serializer_class = DocumentoCargoSerializer
+    filterset_fields = ["cargo"]
+    pagination_class = None
+
+    def perform_create(self, serializer):
+        serializer.save(subido_por=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.archivo.delete(save=False)
+        instance.delete()
+
+    @action(detail=True, methods=["get"])
+    def descargar(self, request, pk=None):
+        documento = self.get_object()
+        return descargar_adjunto(documento.archivo, documento.nombre_original)

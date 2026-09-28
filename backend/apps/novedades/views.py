@@ -1,10 +1,10 @@
 from django.db.models import Count, Q, Sum
-from django.http import FileResponse, Http404
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from apps.core.archivos import descargar_adjunto
 from apps.core.fechas import parse_fecha_param
 from apps.core.viewsets import AuditedModelViewSet, CatalogoViewSet
 
@@ -172,8 +172,4 @@ class DocumentoNovedadViewSet(
     @action(detail=True, methods=["get"])
     def descargar(self, request, pk=None):
         documento = self.get_object()
-        try:
-            archivo = documento.archivo.open("rb")
-        except FileNotFoundError:
-            raise Http404("El archivo no existe en el servidor.")
-        return FileResponse(archivo, as_attachment=True, filename=documento.nombre_original)
+        return descargar_adjunto(documento.archivo, documento.nombre_original)

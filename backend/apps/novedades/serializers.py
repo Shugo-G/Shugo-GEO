@@ -1,8 +1,6 @@
-import os
-
-from django.conf import settings
 from rest_framework import serializers
 
+from apps.core.archivos import tamanio_adjunto, validar_adjunto
 from apps.core.serializers import CatalogoSerializer
 
 from .models import CategoriaEstado, DocumentoNovedad, EstadoNovedad, Novedad, TipoNovedad
@@ -70,20 +68,10 @@ class DocumentoNovedadSerializer(serializers.ModelSerializer):
         extra_kwargs = {"archivo": {"write_only": True}}
 
     def get_tamanio(self, obj):
-        try:
-            return obj.archivo.size
-        except (FileNotFoundError, ValueError):
-            return None
+        return tamanio_adjunto(obj.archivo)
 
     def validate_archivo(self, archivo):
-        extension = os.path.splitext(archivo.name)[1].lower()
-        if extension not in DocumentoNovedad.EXTENSIONES_PERMITIDAS:
-            raise serializers.ValidationError(
-                f"Formato no permitido. Formatos válidos: {', '.join(DocumentoNovedad.EXTENSIONES_PERMITIDAS)}"
-            )
-        if archivo.size > settings.DOCUMENTO_MAX_MB * 1024 * 1024:
-            raise serializers.ValidationError(f"El archivo supera los {settings.DOCUMENTO_MAX_MB} MB.")
-        return archivo
+        return validar_adjunto(archivo)
 
     def create(self, validated_data):
         validated_data["nombre_original"] = validated_data["archivo"].name[:255]
