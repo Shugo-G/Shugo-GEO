@@ -16,6 +16,15 @@ class EstructuraOrganizativaTests(TestCase):
     def crear(self, **datos):
         return self.api.post("/api/organizacion/unidades/", datos, format="json")
 
+    def test_inicializar_no_toca_una_estructura_existente(self):
+        from . import seeds
+
+        self.infra.nombre = "DIRECCIÓN DE INFRAESTRUCTURA"
+        self.infra.save()
+        antes = list(UnidadOrganizativa.objects.values_list("nombre", flat=True))
+        seeds.cargar()  # inicializar corre en cada arranque del contenedor
+        self.assertEqual(list(UnidadOrganizativa.objects.values_list("nombre", flat=True)), antes)
+
     def test_jerarquia_valida(self):
         r = self.crear(nombre="Mesa de ayuda", tipo="AREA", padre=self.infra.id)
         self.assertEqual(r.status_code, 201, r.data)
@@ -49,3 +58,12 @@ class EstructuraOrganizativaTests(TestCase):
         crear_empleado(self.d["area"], self.d["planta"])
         r = self.api.delete(f"/api/organizacion/unidades/{self.d['area'].id}/")
         self.assertEqual(r.status_code, 409)
+
+
+class SeedsOrganizacionTests(TestCase):
+    def test_instalacion_nueva_solo_crea_la_direccion_general(self):
+        from . import seeds
+
+        seeds.cargar()
+        seeds.cargar()  # idempotente
+        self.assertEqual(list(UnidadOrganizativa.objects.values_list("tipo", flat=True)), [TipoUnidad.DIRECCION_GENERAL])

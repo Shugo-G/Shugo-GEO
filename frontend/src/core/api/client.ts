@@ -78,8 +78,17 @@ api.interceptors.response.use(
 /** Extrae un mensaje legible de un error de la API (DRF). */
 export function mensajeError(error: unknown, porDefecto = 'Ocurrió un error inesperado.'): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as Record<string, unknown> | undefined;
-    if (!data) return error.message || porDefecto;
+    const estado = error.response?.status;
+    const data = error.response?.data as Record<string, unknown> | string | undefined;
+    if (!error.response) return 'No se pudo conectar con el servidor.';
+    // Respuesta que no es JSON de la API (página HTML de Django o nginx): 400 por host no
+    // permitido (DJANGO_ALLOWED_HOSTS), 500 del servidor, 502 si el backend no responde...
+    if (!data || typeof data !== 'object') {
+      if (estado === 400) return 'El servidor rechazó la solicitud (400). Revise DJANGO_ALLOWED_HOSTS en el .env del servidor.';
+      if (estado === 502 || estado === 503 || estado === 504) return `El servidor no responde (${estado}). Revise que el backend esté levantado.`;
+      if (estado && estado >= 500) return `Error interno del servidor (${estado}). Revise los logs del backend.`;
+      return error.message || porDefecto;
+    }
     if (typeof data.detail === 'string') return data.detail;
     const primero = Object.entries(data)[0];
     if (primero) {

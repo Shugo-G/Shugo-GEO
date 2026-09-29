@@ -55,7 +55,7 @@ Los respaldos automáticos quedaron fuera de esta etapa (el volumen `pgdata` se 
 
 | Concepto | Descripción |
 |---|---|
-| **Estructura organizativa** | Árbol de **unidades**: Dirección General › Direcciones › Áreas (Configuración › Estructura organizativa). Cada empleado se asigna a **cualquier unidad**, de cualquier nivel (p. ej. personal de la Dirección General sin área). Filtrar por una unidad incluye a todo el personal de sus dependientes. Para sumar un nivel (Departamento, División) se agrega a `TipoUnidad` en `apps/organizacion/models.py`. |
+| **Estructura organizativa** | Árbol de **unidades**: Dirección General › Direcciones › Áreas (Configuración › Estructura organizativa). En una instalación nueva sólo existe la Dirección General (con el nombre de `SHUGO_ORGANISMO`): las direcciones y áreas las crea el administrador, y los reinicios del contenedor no las modifican. Cada empleado se asigna a **cualquier unidad**, de cualquier nivel (p. ej. personal de la Dirección General sin área). Filtrar por una unidad incluye a todo el personal de sus dependientes. Para sumar un nivel (Departamento, División) se agrega a `TipoUnidad` en `apps/organizacion/models.py`. |
 | **Situación de revista** | Estado administrativo cargado a mano: Activo / Suspendido / Baja (baja lógica, se conserva el historial). |
 | **Novedad** | Período de un empleado con un tipo (vacaciones, licencia, ausencia, comisión…). Puede quedar **abierta** (sin fecha de fin) si el tipo lo permite. |
 | **Estado del día** | **No se guarda: se calcula** a partir de las novedades vigentes en la fecha. Sin novedades = Activo. Si hay varias superpuestas se muestran todas. |

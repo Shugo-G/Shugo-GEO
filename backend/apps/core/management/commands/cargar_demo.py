@@ -51,6 +51,10 @@ class Command(BaseCommand):
         fecha_hoy = hoy()
 
         direccion_general = seeds_organizacion.raiz()
+        for orden, nombre in enumerate(dict.fromkeys(AREAS.values()), start=1):
+            UnidadOrganizativa.objects.get_or_create(
+                padre=direccion_general, nombre=nombre, defaults={"tipo": TipoUnidad.DIRECCION, "orden": orden}
+            )
         areas = [
             UnidadOrganizativa.objects.get_or_create(
                 nombre=n,

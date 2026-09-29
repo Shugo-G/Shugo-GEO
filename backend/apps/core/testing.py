@@ -13,10 +13,16 @@ from apps.organizacion.models import ModalidadContratacion, TipoUnidad, UnidadOr
 from apps.personal.models import Empleado
 
 
+DIRECCIONES_PRUEBA = ["Dirección de Desarrollo", "Dirección de Infraestructura"]
+
+
 def datos_base():
     configurar_roles()
     seeds_organizacion.cargar()
     seeds_novedades.cargar()
+    dg = seeds_organizacion.raiz()
+    for orden, nombre in enumerate(DIRECCIONES_PRUEBA, start=1):
+        UnidadOrganizativa.objects.get_or_create(padre=dg, nombre=nombre, defaults={"tipo": TipoUnidad.DIRECCION, "orden": orden})
     return {
         "area": UnidadOrganizativa.objects.create(
             nombre="Soporte",

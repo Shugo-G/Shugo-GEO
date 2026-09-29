@@ -3,12 +3,6 @@ from django.conf import settings
 
 from .models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
 
-# Direcciones que dependen de la Dirección General (organismo raíz).
-DIRECCIONES = [
-    ("Dirección de Desarrollo", 1),
-    ("Dirección de Infraestructura", 2),
-]
-
 MODALIDADES = [
     # nombre, usa_dni_como_legajo, requiere_fecha_fin, color, orden
     ("Planta permanente", False, False, "blue", 1),
@@ -27,11 +21,12 @@ def raiz() -> UnidadOrganizativa:
 
 
 def cargar():
-    dg = raiz()
-    for nombre, orden in DIRECCIONES:
-        UnidadOrganizativa.objects.get_or_create(
-            padre=dg, nombre=nombre, defaults={"tipo": TipoUnidad.DIRECCION, "orden": orden}
-        )
+    # En una instalación nueva sólo se crea la Dirección General (raíz del árbol, con el
+    # nombre de SHUGO_ORGANISMO). Direcciones y áreas las arma el usuario desde
+    # Configuración › Estructura organizativa; inicializar corre en cada arranque del
+    # contenedor y nunca toca una estructura existente.
+    if not UnidadOrganizativa.objects.exists():
+        raiz()
     for nombre, usa_dni, requiere_fin, color, orden in MODALIDADES:
         ModalidadContratacion.objects.get_or_create(
             nombre=nombre,

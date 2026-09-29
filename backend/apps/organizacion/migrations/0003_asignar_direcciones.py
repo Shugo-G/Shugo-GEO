@@ -1,7 +1,8 @@
 """
-Crea las direcciones iniciales y asigna cada área existente:
+Asigna cada área existente (instalaciones previas a las direcciones) a una dirección:
 - "Desarrollo"  -> Dirección de Desarrollo
 - resto         -> Dirección de Infraestructura
+En una base nueva (sin áreas) no crea nada: la estructura la arma el usuario.
 """
 from django.db import migrations
 
@@ -13,6 +14,8 @@ AREAS_DESARROLLO = {"desarrollo"}
 def asignar(apps, schema_editor):
     Direccion = apps.get_model("organizacion", "Direccion")
     Area = apps.get_model("organizacion", "Area")
+    if not Area.objects.filter(direccion__isnull=True).exists():
+        return
 
     desarrollo, _ = Direccion.objects.get_or_create(nombre=DESARROLLO, defaults={"orden": 1})
     infraestructura, _ = Direccion.objects.get_or_create(nombre=INFRAESTRUCTURA, defaults={"orden": 2})
