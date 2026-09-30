@@ -1,10 +1,9 @@
 """
-Estado del personal para el dashboard.
+Estado del personal para el Inicio.
 
-Un empleado está "trabajando" en una fecha si no tiene ninguna novedad vigente
-cuya categoría implique ausencia (las categorías con `cuenta_como_presente`,
-como Comisión/Afectación, no lo sacan de ese conteo). Si un empleado tiene
-varias novedades superpuestas se muestran todas y cuenta en cada categoría.
+Un empleado está "trabajando" (activo) en una fecha si no tiene ninguna novedad
+vigente. Si tiene varias superpuestas se muestran todas y cuenta en el resumen
+de cada artículo de licencia.
 """
 from collections import Counter
 
@@ -12,13 +11,12 @@ from apps.calendario.models import DiaNoLaborable
 from apps.calendario.serializers import DiaNoLaborableSerializer
 from apps.calendario.services import es_habil
 from apps.core.fechas import es_fin_de_semana, hoy, parse_periodo, rango_fechas
-from apps.novedades.models import CategoriaEstado
+from apps.novedades.models import TipoNovedad
 from apps.organizacion.selectors import Arbol
 from apps.novedades.selectors import novedad_vigente_en, novedades_por_empleado, resumir_novedad
 from apps.personal.selectors import filtrar_empleados
 
 ESTADO_TRABAJANDO = "trabajando"
-ESTADO_SIN_NOVEDAD = "sin_novedad"
 
 
 def _empleados_del_periodo(params, hasta):
@@ -26,12 +24,10 @@ def _empleados_del_periodo(params, hasta):
 
 
 def _fila_empleado(empleado, novedades, arbol: Arbol) -> dict:
-    ausente = any(not n.tipo.categoria.cuenta_como_presente for n in novedades)
     return {
         "id": empleado.id,
         "legajo": empleado.legajo,
         "nombre": empleado.nombre_completo,
-        "foto_url": empleado.foto.url if empleado.foto else None,
         "unidad_id": empleado.unidad_id,
         "unidad": empleado.unidad.nombre,
         "unidad_tipo": empleado.unidad.get_tipo_display(),
@@ -41,7 +37,7 @@ def _fila_empleado(empleado, novedades, arbol: Arbol) -> dict:
         "direccion": d.nombre if d else "",
         "modalidad_id": empleado.modalidad_id,
         "modalidad": empleado.modalidad.nombre,
-        "trabajando": not ausente,
+        "trabajando": not novedades,
         "novedades": [resumir_novedad(n) for n in novedades],
     }
 
@@ -49,12 +45,8 @@ def _fila_empleado(empleado, novedades, arbol: Arbol) -> dict:
 def _coincide_estado(fila: dict, estados: list[str]) -> bool:
     if not estados:
         return True
-    categorias = {str(n["categoria_id"]) for n in fila["novedades"]}
-    return (
-        (ESTADO_TRABAJANDO in estados and fila["trabajando"])
-        or (ESTADO_SIN_NOVEDAD in estados and not fila["novedades"])
-        or bool(categorias.intersection(estados))
-    )
+    tipos = {str(n["tipo_id"]) for n in fila["novedades"]}
+    return (ESTADO_TRABAJANDO in estados and fila["trabajando"]) or bool(tipos.intersection(estados))
 
 
 def estado_personal(params) -> dict:
@@ -65,17 +57,17 @@ def estado_personal(params) -> dict:
 
     arbol = Arbol()
     filas = []
-    por_categoria = Counter()
+    por_tipo = Counter()
     trabajando = 0
     for empleado in empleados:
         fila = _fila_empleado(empleado, novedades.get(empleado.id, []), arbol)
         filas.append(fila)
         trabajando += fila["trabajando"]
-        for categoria_id in {n["categoria_id"] for n in fila["novedades"]}:
-            por_categoria[categoria_id] += 1
+        for tipo_id in {n["tipo_id"] for n in fila["novedades"]}:
+            por_tipo[tipo_id] += 1
 
     estados = [e for e in (params.get("estado") or "").split(",") if e]
-    categorias = CategoriaEstado.objects.filter(activo=True) | CategoriaEstado.objects.filter(id__in=por_categoria.keys())
+    tipos = TipoNovedad.objects.filter(activo=True) | TipoNovedad.objects.filter(id__in=por_tipo.keys())
 
     no_laborables = DiaNoLaborable.objects.filter(fecha__range=(desde, hasta))
     return {
@@ -87,15 +79,9 @@ def estado_personal(params) -> dict:
             "total": len(empleados),
             "trabajando": trabajando,
             "no_trabajando": len(empleados) - trabajando,
-            "por_categoria": [
-                {
-                    "id": c.id,
-                    "nombre": c.nombre,
-                    "color": c.color,
-                    "cuenta_como_presente": c.cuenta_como_presente,
-                    "cantidad": por_categoria.get(c.id, 0),
-                }
-                for c in categorias.distinct().order_by("orden", "nombre")
+            "por_tipo": [
+                {"id": t.id, "nombre": t.nombre, "color": t.color, "cantidad": por_tipo.get(t.id, 0)}
+                for t in tipos.distinct().order_by("orden", "nombre")
             ],
         },
         "empleados": [f for f in filas if _coincide_estado(f, estados)],
@@ -133,10 +119,10 @@ def grilla_periodo(params) -> dict:
             ]
             if vigentes:
                 celdas[dia.isoformat()] = [
-                    {"novedad_id": n.id, "tipo": n.tipo.nombre, "color": n.tipo.color_efectivo, "categoria_id": n.tipo.categoria_id}
+                    {"novedad_id": n.id, "tipo_id": n.tipo_id, "tipo": n.tipo.nombre, "color": n.tipo.color}
                     for n in vigentes
                 ]
-            if not any(not n.tipo.categoria.cuenta_como_presente for n in vigentes):
+            if not vigentes:
                 trabajando_por_dia[dia] += 1
         fila = _fila_empleado(empleado, novedades.get(empleado.id, []), arbol)
         fila["celdas"] = celdas

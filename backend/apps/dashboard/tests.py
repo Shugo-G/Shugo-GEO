@@ -13,10 +13,10 @@ class EstadoPersonalTests(TestCase):
         area, planta = self.d["area"], self.d["planta"]
         self.activo = crear_empleado(area, planta, 1)
         self.vacaciones = crear_empleado(area, planta, 2)
-        self.comision = crear_empleado(area, planta, 3)
+        self.medica = crear_empleado(area, planta, 3)
         self.ausente_abierto = crear_empleado(area, planta, 4)
         Novedad.objects.create(empleado=self.vacaciones, tipo=self.d["vacaciones"], fecha_desde=date(2026, 9, 10), fecha_hasta=date(2026, 9, 20), dias=7)
-        Novedad.objects.create(empleado=self.comision, tipo=self.d["comision"], fecha_desde=date(2026, 9, 14), fecha_hasta=date(2026, 9, 16), dias=3)
+        Novedad.objects.create(empleado=self.medica, tipo=self.d["medica"], fecha_desde=date(2026, 9, 14), fecha_hasta=date(2026, 9, 16), dias=3)
         Novedad.objects.create(empleado=self.ausente_abierto, tipo=self.d["ausencia"], fecha_desde=date(2026, 9, 11))
 
     def estado(self, **params):
@@ -28,12 +28,15 @@ class EstadoPersonalTests(TestCase):
         datos = self.estado(desde="2026-09-15")
         resumen = datos["resumen"]
         self.assertEqual(resumen["total"], 4)
-        # activo + comisión (cuenta como presente)
-        self.assertEqual(resumen["trabajando"], 2)
-        cantidades = {c["nombre"]: c["cantidad"] for c in resumen["por_categoria"]}
-        self.assertEqual(cantidades["Vacaciones"], 1)
-        self.assertEqual(cantidades["Ausente"], 1)
-        self.assertEqual(cantidades["Comisión / Afectación"], 1)
+        # Sólo trabaja quien no tiene licencias vigentes.
+        self.assertEqual(resumen["trabajando"], 1)
+        # Resumen por artículo de licencia, con su color.
+        por_tipo = {t["nombre"]: t for t in resumen["por_tipo"]}
+        self.assertEqual(
+            {n: por_tipo[n]["cantidad"] for n in ("Licencia vacaciones", "Licencia médica", "Ausencia", "Licencia invernal")},
+            {"Licencia vacaciones": 1, "Licencia médica": 1, "Ausencia": 1, "Licencia invernal": 0},
+        )
+        self.assertEqual(por_tipo["Licencia médica"]["color"], self.d["medica"].color)
 
     def test_novedad_abierta_sigue_vigente(self):
         datos = self.estado(desde="2026-12-01")
@@ -43,7 +46,10 @@ class EstadoPersonalTests(TestCase):
 
     def test_filtro_por_estado_y_empleado(self):
         datos = self.estado(desde="2026-09-15", estado="trabajando")
-        self.assertEqual({e["id"] for e in datos["empleados"]}, {self.activo.id, self.comision.id})
+        self.assertEqual({e["id"] for e in datos["empleados"]}, {self.activo.id})
+        # Filtro por artículo (se combina con "trabajando")
+        datos = self.estado(desde="2026-09-15", estado=f"trabajando,{self.d['medica'].id}")
+        self.assertEqual({e["id"] for e in datos["empleados"]}, {self.activo.id, self.medica.id})
         datos = self.estado(desde="2026-09-15", empleado=str(self.vacaciones.id))
         self.assertEqual(len(datos["empleados"]), 1)
 

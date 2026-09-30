@@ -39,24 +39,16 @@ export interface NodoUnidad {
   children: NodoUnidad[];
 }
 
-export type Puesto = Catalogo;
-
 export interface Modalidad extends Catalogo {
   usa_dni_como_legajo: boolean;
   requiere_fecha_fin: boolean;
   color: string;
 }
 
-export interface CategoriaEstado extends Catalogo {
-  color: string;
-  cuenta_como_presente: boolean;
-}
-
+/** Artículo de licencia (TipoNovedad en el backend). */
 export interface TipoNovedad extends Catalogo {
-  categoria: number;
-  categoria_nombre: string;
+  /** Color con el que se muestra en el Inicio y el calendario. */
   color: string;
-  color_efectivo: string;
   computo_dias: 'HABILES' | 'CORRIDOS';
   computo_dias_display: string;
   descuenta_saldo: boolean;
@@ -79,8 +71,6 @@ export function useArbolUnidades(soloActivas = false) {
     staleTime: 60_000,
   });
 }
-export const puestosApi = crearRecurso<Puesto>('organizacion/puestos');
 export const modalidadesApi = crearRecurso<Modalidad>('organizacion/modalidades');
-export const categoriasApi = crearRecurso<CategoriaEstado>('novedades/categorias');
 export const tiposNovedadApi = crearRecurso<TipoNovedad>('novedades/tipos');
 export const noLaborablesApi = crearRecurso<DiaNoLaborable>('calendario/no-laborables');

@@ -3,22 +3,22 @@ import { Alert, Badge, Divider, Drawer, Empty, List, Statistic, Tag, Typography 
 import dayjs from 'dayjs';
 import { fmtFecha } from '@/core/utils/format';
 import { COLOR_ACTIVO } from '@/app/theme';
-import FotoEmpleado from '@/shared/components/FotoEmpleado';
-import type { EventoNovedad } from '../api';
-import type { InfoDia } from '../dias';
+import IconoPersona from '@/shared/components/IconoPersona';
+import type { EventoNovedad } from './api';
+import type { InfoDia } from './dias';
 
 interface Props {
   info: InfoDia | null;
   total: number;
-  ordenCategorias: number[];
+  ordenArticulos: number[];
   onClose: () => void;
 }
 
-/** Quiénes no están un día determinado, agrupados por tipo de licencia. */
-export default function DetalleDiaDrawer({ info, total, ordenCategorias, onClose }: Props) {
+/** Quiénes no están un día determinado, agrupados por artículo de licencia. */
+export default function DetalleDiaDrawer({ info, total, ordenArticulos, onClose }: Props) {
   const grupos = new Map<number, EventoNovedad[]>();
-  info?.novedades.forEach((n) => grupos.set(n.categoria_id, [...(grupos.get(n.categoria_id) ?? []), n]));
-  const ordenados = [...grupos.entries()].sort(([a], [b]) => ordenCategorias.indexOf(a) - ordenCategorias.indexOf(b));
+  info?.novedades.forEach((n) => grupos.set(n.tipo_id, [...(grupos.get(n.tipo_id) ?? []), n]));
+  const ordenados = [...grupos.entries()].sort(([a], [b]) => ordenArticulos.indexOf(a) - ordenArticulos.indexOf(b));
   const fecha = info ? dayjs(info.fecha).format('dddd D [de] MMMM [de] YYYY') : '';
   const titulo = fecha.charAt(0).toUpperCase() + fecha.slice(1);
 
@@ -48,10 +48,10 @@ export default function DetalleDiaDrawer({ info, total, ordenCategorias, onClose
             </div>
           )}
           {info.laborable && !info.novedades.length && <Empty description="Todo el personal está disponible" />}
-          {ordenados.map(([categoriaId, novedades]) => (
-            <div key={categoriaId}>
+          {ordenados.map(([tipoId, novedades]) => (
+            <div key={tipoId}>
               <Divider orientation="left" plain style={{ margin: '12px 0 4px' }}>
-                <Badge color={novedades[0].color} text={`${novedades[0].categoria} (${novedades.length})`} />
+                <Badge color={novedades[0].color} text={`${novedades[0].tipo} (${novedades.length})`} />
               </Divider>
               <List
                 size="small"
@@ -59,13 +59,12 @@ export default function DetalleDiaDrawer({ info, total, ordenCategorias, onClose
                 renderItem={(n) => (
                   <List.Item>
                     <List.Item.Meta
-                      avatar={<FotoEmpleado url={n.foto_url} nombre={n.empleado} tamanio={40} />}
+                      avatar={<IconoPersona color={n.color} tamanio={40} />}
                       title={<Link to={`/personal/${n.empleado_id}`}>{n.empleado}</Link>}
                       description={
                         <>
                           <div>{n.unidad}</div>
                           <div>
-                            <Typography.Text>{n.tipo}</Typography.Text>{' '}
                             <Typography.Text type="secondary">
                               {fmtFecha(n.desde)} → {n.hasta ? fmtFecha(n.hasta) : <Tag color="red" bordered={false}>abierta</Tag>}
                             </Typography.Text>

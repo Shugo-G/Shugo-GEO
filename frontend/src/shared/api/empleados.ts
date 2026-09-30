@@ -1,4 +1,3 @@
-import { api } from '@/core/api/client';
 import { crearRecurso } from '@/core/api/crud';
 
 export type SituacionRevista = 'ACTIVO' | 'SUSPENDIDO' | 'BAJA';
@@ -11,14 +10,11 @@ export interface Empleado {
   dni: string;
   legajo: string;
   fecha_nacimiento: string | null;
-  foto_url: string | null;
   unidad: number;
   unidad_nombre: string;
   unidad_tipo: string;
   /** Ruta completa, p. ej. "Dirección de Infraestructura › Soporte técnico". */
   unidad_ruta: string;
-  puesto: number | null;
-  puesto_nombre: string | null;
   modalidad: number;
   modalidad_nombre: string;
   fecha_ingreso: string;
@@ -38,12 +34,3 @@ export const SITUACIONES: { value: SituacionRevista; label: string; color: strin
 ];
 
 export const empleadosApi = crearRecurso<Empleado>('personal/empleados');
-
-export const fotoEmpleadoApi = {
-  subir: async (id: number, archivo: File) => {
-    const datos = new FormData();
-    datos.append('foto', archivo);
-    return (await api.post<Empleado>(`/personal/empleados/${id}/foto/`, datos)).data;
-  },
-  quitar: async (id: number) => (await api.delete<Empleado>(`/personal/empleados/${id}/foto/`)).data,
-};

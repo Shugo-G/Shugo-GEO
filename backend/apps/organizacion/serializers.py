@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.serializers import CatalogoSerializer
 
-from .models import ModalidadContratacion, Puesto, TipoUnidad, UnidadOrganizativa
+from .models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
 from .selectors import Arbol
 
 
@@ -53,11 +53,6 @@ class UnidadOrganizativaSerializer(CatalogoSerializer):
         if errores:
             raise serializers.ValidationError(errores)
         return attrs
-
-
-class PuestoSerializer(CatalogoSerializer):
-    class Meta(CatalogoSerializer.Meta):
-        model = Puesto
 
 
 class ModalidadContratacionSerializer(CatalogoSerializer):

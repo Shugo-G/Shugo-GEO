@@ -142,7 +142,6 @@ export default function EstructuraPage() {
     <>
       <PageHeader
         titulo="Estructura organizativa"
-        subtitulo="Dirección General › Direcciones › Áreas. El personal puede depender de cualquier unidad."
         acciones={
           puedeAgregar && (
             <Button type="primary" icon={<PlusOutlined />} onClick={() => abrir({ tipo: arbol.length ? 'DIRECCION' : 'DIRECCION_GENERAL', padre: arbol[0]?.id })}>

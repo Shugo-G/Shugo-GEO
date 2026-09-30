@@ -3,7 +3,7 @@ import { api } from '@/core/api/client';
 import { limpiarParams } from '@/core/api/crud';
 import type { Params } from '@/core/api/types';
 
-/** Grilla agente × día (endpoint /dashboard/grilla/). La usan el dashboard y el calendario. */
+/** Grilla agente × día (endpoint /dashboard/grilla/). La usa la vista por período del Inicio. */
 export interface DiaGrilla {
   fecha: string;
   fin_de_semana: boolean;
@@ -15,13 +15,12 @@ export interface CeldaGrilla {
   novedad_id: number;
   tipo: string;
   color: string;
-  categoria_id: number;
+  tipo_id: number;
 }
 
 export interface FilaGrilla {
   id: number;
   nombre: string;
-  foto_url: string | null;
   unidad: string;
   celdas: Record<string, CeldaGrilla[]>;
 }

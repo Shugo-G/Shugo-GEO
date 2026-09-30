@@ -26,7 +26,7 @@ def validar_novedad(
     if hasta and hasta < desde:
         errores["fecha_hasta"] = "No puede ser anterior a la fecha de inicio."
     if hasta is None and not tipo.permite_sin_fecha_fin:
-        errores["fecha_hasta"] = "Este tipo de novedad requiere fecha de finalización."
+        errores["fecha_hasta"] = "Este artículo de licencia requiere fecha de finalización."
     if empleado.fecha_ingreso and desde < empleado.fecha_ingreso:
         errores["fecha_desde"] = "No puede ser anterior a la fecha de ingreso del empleado."
 

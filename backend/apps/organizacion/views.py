@@ -4,9 +4,9 @@ from rest_framework.response import Response
 
 from apps.core.viewsets import CatalogoViewSet
 
-from .models import ModalidadContratacion, Puesto, TipoUnidad, UnidadOrganizativa
+from .models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
 from .selectors import Arbol
-from .serializers import ModalidadContratacionSerializer, PuestoSerializer, UnidadOrganizativaSerializer
+from .serializers import ModalidadContratacionSerializer, UnidadOrganizativaSerializer
 
 
 class UnidadOrganizativaViewSet(CatalogoViewSet):
@@ -28,11 +28,6 @@ class UnidadOrganizativaViewSet(CatalogoViewSet):
     @action(detail=False, methods=["get"])
     def tipos(self, request):
         return Response([{"value": v, "label": l} for v, l in TipoUnidad.choices])
-
-
-class PuestoViewSet(CatalogoViewSet):
-    queryset = Puesto.objects.all()
-    serializer_class = PuestoSerializer
 
 
 class ModalidadContratacionViewSet(CatalogoViewSet):

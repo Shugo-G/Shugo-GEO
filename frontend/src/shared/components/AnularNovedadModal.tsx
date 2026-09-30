@@ -69,7 +69,7 @@ export default function AnularNovedadModal({ novedad, onClose }: { novedad: Nove
             message="Use esta opción sólo si la licencia fue cargada por error."
             description={
               <>
-                La licencia queda registrada como anulada y deja de contar en el dashboard, el calendario y los reportes.
+                La licencia queda registrada como anulada y deja de contar en el Inicio, el calendario y los reportes.
                 {novedad.descuenta_saldo && novedad.dias ? ` Se reintegrarán ${novedad.dias} día(s) al saldo.` : ''} Si el
                 agente volvió antes de lo previsto, use "Interrumpir".
               </>

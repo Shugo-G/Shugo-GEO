@@ -1,14 +1,13 @@
 """
-Novedades del personal: vacaciones, licencias, ausencias, comisiones, etc.
+Licencias del personal: vacaciones, licencias, ausencias, etc.
 
-- CategoriaEstado: agrupa tipos para el dashboard (Vacaciones, Licencia médica,
-  Ausente...). Define color y si el agente cuenta como "trabajando".
-- TipoNovedad: tipo concreto configurable (Licencia vacaciones, Licencia
-  invernal, Licencia médica...). Define cómo se computan los días y si
-  descuenta saldo.
-- Novedad: registro de un período de un empleado con un tipo.
+- TipoNovedad ("artículo de licencia" en la interfaz): configurable (Licencia
+  vacaciones, Licencia invernal, Licencia médica...). Define su color en el
+  Inicio y el calendario, cómo se computan los días y si descuenta saldo.
+- Novedad: registro de un período de un empleado con un artículo.
 
-El estado del día de cada empleado se deriva de las novedades vigentes.
+El estado del día de cada empleado se deriva de sus novedades vigentes: sin
+novedades está activo (trabajando); con alguna, figura con ese artículo.
 """
 from django.conf import settings
 from django.db import models
@@ -19,26 +18,13 @@ from apps.core.archivos import ruta_adjunto
 from apps.core.models import CatalogoBase, TimeStampedModel
 
 
-class CategoriaEstado(CatalogoBase):
-    color = models.CharField("color", max_length=20, default="#8c8c8c")
-    cuenta_como_presente = models.BooleanField(
-        "cuenta como presente",
-        default=False,
-        help_text="Si está marcado, el agente se considera trabajando (p. ej. comisión de servicio).",
-    )
-
-    history = HistoricalRecords()
-
-    class Meta(CatalogoBase.Meta):
-        verbose_name = "categoría de estado"
-        verbose_name_plural = "categorías de estado"
+COLOR_POR_DEFECTO = "#1677ff"
 
 
 class TipoNovedad(CatalogoBase):
-    categoria = models.ForeignKey(
-        CategoriaEstado, verbose_name="categoría", on_delete=models.PROTECT, related_name="tipos"
+    color = models.CharField(
+        "color", max_length=20, default=COLOR_POR_DEFECTO, help_text="Color con el que se muestra en el Inicio y el calendario."
     )
-    color = models.CharField("color", max_length=20, blank=True, help_text="Vacío = color de la categoría.")
     computo_dias = models.CharField(
         "cómputo de días", max_length=10, choices=ComputoDias.CHOICES, default=ComputoDias.HABILES
     )
@@ -55,7 +41,7 @@ class TipoNovedad(CatalogoBase):
         blank=True,
         related_name="tipos_que_comparten_saldo",
         help_text=(
-            "Comparte la bolsa de días de otro tipo (p. ej. Licencia invernal → Licencia vacaciones). "
+            "Comparte la bolsa de días de otro artículo (p. ej. Licencia invernal → Licencia vacaciones). "
             "Sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella."
         ),
     )
@@ -75,12 +61,8 @@ class TipoNovedad(CatalogoBase):
     history = HistoricalRecords()
 
     class Meta(CatalogoBase.Meta):
-        verbose_name = "tipo de novedad"
-        verbose_name_plural = "tipos de novedad"
-
-    @property
-    def color_efectivo(self) -> str:
-        return self.color or self.categoria.color
+        verbose_name = "artículo de licencia"
+        verbose_name_plural = "artículos de licencia"
 
     @property
     def tipo_saldo(self) -> "TipoNovedad":
@@ -115,7 +97,7 @@ class NovedadQuerySet(models.QuerySet):
         )
 
     def con_relaciones(self):
-        return self.select_related("empleado__unidad", "empleado__modalidad", "tipo__categoria", "creado_por")
+        return self.select_related("empleado__unidad", "empleado__modalidad", "creado_por")
 
     def en_periodo(self, desde, hasta):
         """Novedades que se superponen con el período [desde, hasta]. Las abiertas siguen vigentes."""

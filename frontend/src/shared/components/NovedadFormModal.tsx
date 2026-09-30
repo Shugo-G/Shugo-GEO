@@ -157,7 +157,7 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
   return (
     <Modal
       open={open}
-      title={novedad ? 'Editar novedad' : 'Registrar novedad'}
+      title={novedad ? 'Editar licencia' : 'Registrar licencia'}
       onCancel={onClose}
       onOk={onGuardar}
       okText="Guardar"
@@ -188,7 +188,7 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
         </Form.Item>
         <Form.Item
           name="tipo"
-          label="Tipo de novedad"
+          label="Artículo de licencia"
           rules={[{ required: true, message: 'Seleccione el tipo' }]}
           extra={
             tipo &&

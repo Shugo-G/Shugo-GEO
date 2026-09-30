@@ -9,7 +9,7 @@ import PageHeader from '@/core/components/PageHeader';
 import { descargarArchivo } from '@/core/utils/descargar';
 import { FORMATO_FECHA, fmtFecha } from '@/core/utils/format';
 import { SITUACIONES } from '@/shared/api/empleados';
-import { CategoriaSelect, EmpleadoSelect, InsumoSelect, ModalidadSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
+import { EmpleadoSelect, InsumoSelect, ModalidadSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
 
 interface FiltroReporte {
   nombre: string;
@@ -55,8 +55,6 @@ function CampoFiltro({ filtro, ...control }: { filtro: FiltroReporte; value?: ne
       return <TipoNovedadSelect mode={modo} soloActivos={false} placeholder="Todos" {...props} />;
     case 'tipo_saldo':
       return <TipoNovedadSelect mode={modo} soloConSaldo placeholder="Todos" {...props} />;
-    case 'categoria':
-      return <CategoriaSelect mode={modo} placeholder="Todas" {...props} />;
     case 'tipo_insumo':
       return <InsumoSelect mode={modo} placeholder="Todos" {...props} />;
     case 'situacion_cargo':
@@ -144,7 +142,7 @@ export default function ReportesPage() {
 
   return (
     <>
-      <PageHeader titulo="Reportes" subtitulo="Generación y exportación de información a Excel o PDF" />
+      <PageHeader titulo="Reportes" />
       <Row gutter={16}>
         <Col xs={24} lg={8} xl={7}>
           <Card size="small" loading={isLoading} style={{ marginBottom: 16 }}>

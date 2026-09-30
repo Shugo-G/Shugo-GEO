@@ -95,7 +95,7 @@ export default function SaldosPage() {
   const columnasMov: TableColumnsType<MovimientoSaldo> = [
     { title: 'Fecha', dataIndex: 'fecha', render: fmtFecha, width: 110 },
     { title: 'Empleado', dataIndex: 'empleado_nombre', render: (t, m) => <Link to={`/personal/${m.empleado}`}>{t}</Link> },
-    { title: 'Tipo', dataIndex: 'tipo_novedad_nombre', responsive: ['lg'] },
+    { title: 'Artículo', dataIndex: 'tipo_novedad_nombre', responsive: ['lg'] },
     { title: 'Concepto', dataIndex: 'concepto', render: (c, m) => <Tag color={CONCEPTOS.find((x) => x.value === c)?.color}>{m.concepto_display}</Tag> },
     { title: 'Año', dataIndex: 'anio', width: 70 },
     { title: 'Días', dataIndex: 'dias', width: 70, align: 'right', render: (d: number) => (d > 0 ? `+${d}` : d) },
@@ -129,8 +129,7 @@ export default function SaldosPage() {
   return (
     <>
       <PageHeader
-        titulo="Vacaciones y saldos"
-        subtitulo="Días asignados, compensados, utilizados y disponibles por empleado"
+        titulo="Estado de licencias"
         acciones={
           <>
             <Button icon={<FileExcelOutlined />} onClick={() => descargarArchivo('/reportes/saldos/', { ...comunes, tipo_saldo: filtros.tipo, formato: 'xlsx' })}>

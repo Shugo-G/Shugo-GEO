@@ -39,7 +39,7 @@ class MovimientoSaldoSerializer(serializers.ModelSerializer):
         concepto = valor("concepto")
         dias = valor("dias")
         if tipo and not tipo.descuenta_saldo:
-            errores["tipo_novedad"] = "El tipo seleccionado no maneja saldo."
+            errores["tipo_novedad"] = "El artículo seleccionado no maneja saldo."
         if dias == 0:
             errores["dias"] = "La cantidad de días no puede ser cero."
         elif dias is not None and dias < 0 and concepto != ConceptoMovimiento.AJUSTE:

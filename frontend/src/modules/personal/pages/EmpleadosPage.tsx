@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Col, Input, Row, Select, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
+import { Button, Card, Col, Input, Row, Select, Table, Tag, Typography, type TableColumnsType } from 'antd';
 import { ClearOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { Can } from '@/core/auth/guards';
 import PageHeader from '@/core/components/PageHeader';
@@ -8,7 +8,6 @@ import { useFiltrosUrl } from '@/core/hooks/useFiltrosUrl';
 import { fmtFecha } from '@/core/utils/format';
 import { SITUACIONES, empleadosApi, type Empleado } from '@/shared/api/empleados';
 import { ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
-import FotoEmpleado from '@/shared/components/FotoEmpleado';
 import RutaUnidad from '@/shared/components/RutaUnidad';
 import EmpleadoFormModal from '../components/EmpleadoFormModal';
 
@@ -38,12 +37,7 @@ export default function EmpleadosPage() {
       dataIndex: 'nombre_completo',
       key: 'apellido',
       sorter: true,
-      render: (texto, e) => (
-        <Space>
-          <FotoEmpleado url={e.foto_url} nombre={texto} tamanio={32} />
-          <Link to={`/personal/${e.id}`}>{texto}</Link>
-        </Space>
-      ),
+      render: (texto, e) => <Link to={`/personal/${e.id}`}>{texto}</Link>,
     },
     { title: 'DNI', dataIndex: 'dni', width: 110, responsive: ['lg'] },
     {
@@ -53,7 +47,6 @@ export default function EmpleadosPage() {
       sorter: true,
       render: (ruta: string) => <RutaUnidad ruta={ruta} />,
     },
-    { title: 'Puesto', dataIndex: 'puesto_nombre', responsive: ['xl'], render: (v) => v ?? '—' },
     { title: 'Modalidad', dataIndex: 'modalidad_nombre', key: 'modalidad__nombre', sorter: true, responsive: ['md'] },
     { title: 'Ingreso', dataIndex: 'fecha_ingreso', key: 'fecha_ingreso', sorter: true, render: fmtFecha, responsive: ['lg'], width: 110 },
     {
@@ -68,7 +61,6 @@ export default function EmpleadosPage() {
     <>
       <PageHeader
         titulo="Personal"
-        subtitulo="Registro único del personal de la Dirección General"
         acciones={
           <Can permiso="personal.add_empleado">
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalAbierto(true)}>

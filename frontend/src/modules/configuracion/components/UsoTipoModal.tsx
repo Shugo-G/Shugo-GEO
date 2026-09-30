@@ -21,7 +21,7 @@ interface Uso {
 }
 
 /**
- * Quiénes usan un tipo de licencia (días asignados y licencias registradas).
+ * Quiénes usan un artículo de licencia (días asignados y licencias registradas).
  * Es lo que impide eliminarlo; desde acá se llega a cada ficha o a los listados filtrados.
  */
 export default function UsoTipoModal({ tipo, onClose }: { tipo: TipoNovedad | null; onClose: () => void }) {
@@ -52,7 +52,7 @@ export default function UsoTipoModal({ tipo, onClose }: { tipo: TipoNovedad | nu
             showIcon
             style={{ marginBottom: 12 }}
             message="Puede eliminarse."
-            description={`Sólo tiene ${data!.anuladas} licencia(s) anulada(s), que se eliminarán junto con el tipo.`}
+            description={`Sólo tiene ${data!.anuladas} licencia(s) anulada(s), que se eliminarán junto con el artículo.`}
           />
         )}
         {!!data?.tipos_que_comparten_saldo.length && (
@@ -60,7 +60,7 @@ export default function UsoTipoModal({ tipo, onClose }: { tipo: TipoNovedad | nu
             type="warning"
             showIcon
             style={{ marginBottom: 12 }}
-            message={`Otros tipos usan su saldo: ${data.tipos_que_comparten_saldo.join(', ')}. Cámbielos antes de eliminarlo.`}
+            message={`Otros artículos usan su saldo: ${data.tipos_que_comparten_saldo.join(', ')}. Cámbielos antes de eliminarlo.`}
           />
         )}
         {!!data?.movimientos.length && (

@@ -9,13 +9,12 @@ class EmpleadoFilter(django_filters.FilterSet):
     # Incluye a quienes dependen de unidades inferiores.
     unidad = django_filters.CharFilter(method="filtrar_unidad")
     modalidad = django_filters.BaseInFilter(field_name="modalidad_id")
-    puesto = django_filters.BaseInFilter(field_name="puesto_id")
     situacion_revista = django_filters.BaseInFilter(field_name="situacion_revista")
     contrato_vence_antes = django_filters.DateFilter(field_name="fecha_fin_contrato", lookup_expr="lte")
 
     class Meta:
         model = Empleado
-        fields = ["unidad", "modalidad", "puesto", "situacion_revista"]
+        fields = ["unidad", "modalidad", "situacion_revista"]
 
     def filtrar_unidad(self, queryset, name, value):
         unidades = unidades_con_descendientes(value)

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { usePermiso } from '@/core/auth/AuthContext';
 import { Link } from 'react-router-dom';
 import {
   Alert,
@@ -35,15 +36,18 @@ import { useFiltrosUrl } from '@/core/hooks/useFiltrosUrl';
 import { descargarArchivo } from '@/core/utils/descargar';
 import { FORMATO_FECHA, fmtFecha, hoyApi } from '@/core/utils/format';
 import { EstadoNovedades } from '@/shared/components/EstadoNovedades';
-import FotoEmpleado from '@/shared/components/FotoEmpleado';
+import IconoPersona from '@/shared/components/IconoPersona';
+import { COLOR_ACTIVO } from '@/app/theme';
 import RutaUnidad from '@/shared/components/RutaUnidad';
 import { EmpleadoSelect, EstadoSelect, ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
 import { useEstadoPersonal, type FilaEstado } from '../api';
 import GrillaPeriodo from '@/shared/components/GrillaPeriodo';
 import TarjetasPorDireccion from '../components/TarjetasPorDireccion';
 import ResumenCards from '../components/ResumenCards';
+import CalendarioMensual, { type VistaCalendario } from '../calendario/CalendarioMensual';
 
-const FILTROS = ['modo', 'fecha', 'desde', 'hasta', 'unidad', 'modalidad', 'estado', 'empleado', 'vista'] as const;
+const FILTROS = ['modo', 'fecha', 'desde', 'hasta', 'unidad', 'modalidad', 'estado', 'empleado', 'vista', 'mes', 'cal'] as const;
+const VISTAS = ['tabla', 'grilla', 'calendario'];
 
 const PRESETS_PERIODO: { label: string; value: [Dayjs, Dayjs] }[] = [
   { label: 'Esta semana', value: [dayjs().startOf('isoWeek'), dayjs().endOf('isoWeek')] },
@@ -60,7 +64,10 @@ export default function DashboardPage() {
   const { filtros, setFiltros, limpiar, lista } = useFiltrosUrl(FILTROS);
   const [busqueda, setBusqueda] = useState('');
   const modo = filtros.modo === 'periodo' ? 'periodo' : 'dia';
-  const vista = filtros.vista === 'grilla' || filtros.vista === 'tabla' ? filtros.vista : 'direcciones';
+  const verCalendario = usePermiso(['novedades.view_novedad', 'calendario.view_dianolaborable']);
+  const vista = filtros.vista && VISTAS.includes(filtros.vista) && (filtros.vista !== 'calendario' || verCalendario) ? filtros.vista : 'direcciones';
+  const mesCalendario = filtros.mes && dayjs(`${filtros.mes}-01`).isValid() ? dayjs(`${filtros.mes}-01`) : dayjs().startOf('month');
+  const vistaCalendario: VistaCalendario = filtros.cal === 'lista' ? 'lista' : 'mes';
   const fecha = filtros.fecha ?? hoyApi();
   const desde = modo === 'dia' ? fecha : filtros.desde ?? hoyApi();
   const hasta = modo === 'dia' ? fecha : filtros.hasta ?? dayjs().add(14, 'day').format('YYYY-MM-DD');
@@ -110,7 +117,7 @@ export default function DashboardPage() {
       sorter: (a, b) => a.nombre.localeCompare(b.nombre),
       render: (_, fila) => (
         <Space>
-          <FotoEmpleado url={fila.foto_url} nombre={fila.nombre} tamanio={36} />
+          <IconoPersona color={fila.novedades[0]?.color ?? COLOR_ACTIVO} tamanio={36} />
           <div>
             <Link to={`/personal/${fila.id}`}>{fila.nombre}</Link>
             <div>
@@ -277,7 +284,7 @@ export default function DashboardPage() {
           activeKey={vista}
           onChange={(k) => setFiltros({ vista: k === 'direcciones' ? undefined : k })}
           tabBarExtraContent={
-            vista !== 'grilla' && (
+            (vista === 'direcciones' || vista === 'tabla') && (
               <Input
                 allowClear
                 prefix={<SearchOutlined />}
@@ -333,10 +340,37 @@ export default function DashboardPage() {
                       Próximos {DIAS_GRILLA_MODO_DIA} días desde la fecha seleccionada. Use el modo "Período" para elegir otro rango (máx. 92 días).
                     </Typography.Paragraph>
                   )}
-                  <GrillaPeriodo params={paramsGrilla} categorias={data?.resumen.por_categoria ?? []} />
+                  <GrillaPeriodo params={paramsGrilla} articulos={data?.resumen.por_tipo ?? []} />
                 </>
               ),
             },
+            ...(verCalendario
+              ? [
+                  {
+                    key: 'calendario',
+                    label: (
+                      <span>
+                        <CalendarOutlined /> Calendario
+                      </span>
+                    ),
+                    children: vista === 'calendario' && (
+                      <CalendarioMensual
+                        filtros={{
+                          unidad: filtros.unidad,
+                          modalidad: filtros.modalidad,
+                          empleado: filtros.empleado,
+                          // "trabajando" no tiene licencias que mostrar en el calendario.
+                          tipo: estados.filter((e) => e !== 'trabajando').join(',') || undefined,
+                        }}
+                        mes={mesCalendario}
+                        onCambiarMes={(m) => setFiltros({ mes: m.isSame(dayjs(), 'month') ? undefined : m.format('YYYY-MM') })}
+                        vista={vistaCalendario}
+                        onCambiarVista={(v) => setFiltros({ cal: v === 'mes' ? undefined : v })}
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ]}
         />
       </Card>

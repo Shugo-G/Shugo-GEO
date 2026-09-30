@@ -7,7 +7,6 @@ export interface FilaEstado {
   id: number;
   legajo: string;
   nombre: string;
-  foto_url: string | null;
   unidad_id: number;
   unidad: string;
   unidad_tipo: string;
@@ -21,11 +20,11 @@ export interface FilaEstado {
   novedades: NovedadResumen[];
 }
 
-export interface ResumenCategoria {
+/** Cantidad de agentes con cada artículo de licencia vigente. */
+export interface ResumenArticulo {
   id: number;
   nombre: string;
   color: string;
-  cuenta_como_presente: boolean;
   cantidad: number;
 }
 
@@ -34,14 +33,14 @@ export interface EstadoPersonal {
   hasta: string;
   es_un_dia: boolean;
   dia_habil: boolean;
-  resumen: { total: number; trabajando: number; no_trabajando: number; por_categoria: ResumenCategoria[] };
+  resumen: { total: number; trabajando: number; no_trabajando: number; por_tipo: ResumenArticulo[] };
   empleados: FilaEstado[];
   /** Columnas de la vista por dirección (Dirección General y sus direcciones), en orden. */
   grupos: { id: number; nombre: string; tipo: string }[];
   no_laborables: DiaNoLaborable[];
 }
 
-/** Intervalo de actualización automática del dashboard ("tiempo real"). */
+/** Intervalo de actualización automática del Inicio ("tiempo real"). */
 const REFRESCO_MS = 60_000;
 
 export function useEstadoPersonal(params: Params) {

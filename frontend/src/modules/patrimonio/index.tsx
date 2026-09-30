@@ -7,7 +7,7 @@ const PERMISO = 'patrimonio.view_cargopatrimonial';
 const patrimonio: AppModule = {
   key: 'patrimonio',
   orden: 45,
-  menu: [{ key: 'patrimonio', label: 'Patrimonio', icon: <LaptopOutlined />, path: '/patrimonio', permiso: PERMISO }],
+  menu: [{ key: 'patrimonio', label: 'Cargos patrimoniales', icon: <LaptopOutlined />, path: '/patrimonio', permiso: PERMISO }],
   routes: [{ path: '/patrimonio', component: lazy(() => import('./pages/InventarioPage')), permiso: PERMISO }],
 };
 

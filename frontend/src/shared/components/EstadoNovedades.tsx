@@ -21,7 +21,7 @@ export function EstadoNovedades({ novedades, vertical = true }: { novedades: Nov
           key={n.id}
           title={
             <>
-              {n.categoria}
+              {n.tipo}
               {n.motivo && <div>Motivo: {n.motivo}</div>}
               <div>
                 {fmtFecha(n.desde)} → {n.hasta ? fmtFecha(n.hasta) : 'sin fecha de fin'}

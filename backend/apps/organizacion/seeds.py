@@ -27,8 +27,8 @@ def cargar():
     # contenedor y nunca toca una estructura existente.
     if not UnidadOrganizativa.objects.exists():
         raiz()
-    for nombre, usa_dni, requiere_fin, color, orden in MODALIDADES:
-        ModalidadContratacion.objects.get_or_create(
-            nombre=nombre,
-            defaults={"usa_dni_como_legajo": usa_dni, "requiere_fecha_fin": requiere_fin, "color": color, "orden": orden},
-        )
+    if not ModalidadContratacion.objects.exists():
+        for nombre, usa_dni, requiere_fin, color, orden in MODALIDADES:
+            ModalidadContratacion.objects.create(
+                nombre=nombre, usa_dni_como_legajo=usa_dni, requiere_fecha_fin=requiere_fin, color=color, orden=orden
+            )

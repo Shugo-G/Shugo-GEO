@@ -1,5 +1,5 @@
-import { Card, Col, Row, Statistic, Tooltip, Typography } from 'antd';
-import { CheckCircleFilled, InfoCircleOutlined, TeamOutlined } from '@ant-design/icons';
+import { Card, Col, Row, Statistic, Typography } from 'antd';
+import { CheckCircleFilled, TeamOutlined } from '@ant-design/icons';
 import { COLOR_ACTIVO } from '@/app/theme';
 import type { EstadoPersonal } from '../api';
 
@@ -15,8 +15,8 @@ function Punto({ color }: { color: string }) {
 }
 
 /**
- * Tarjetas del dashboard: total, trabajando y una por cada categoría de
- * estado configurada. Al hacer clic filtran la tabla por ese estado.
+ * Tarjetas del Inicio: total, trabajando y una por cada artículo de licencia,
+ * con su color. Al hacer clic filtran por ese estado.
  */
 export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggleEstado }: Props) {
   const porcentaje = resumen.total ? Math.round((resumen.trabajando / resumen.total) * 100) : 0;
@@ -48,7 +48,7 @@ export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggl
           />
         </Card>
       </Col>
-      {resumen.por_categoria.map((c) => (
+      {resumen.por_tipo.map((c) => (
         <Col key={c.id} xs={12} sm={8} flex="1 1 120px">
           <Card
             size="small"
@@ -60,11 +60,6 @@ export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggl
               title={
                 <>
                   <Punto color={c.color} /> {c.nombre}
-                  {c.cuenta_como_presente && (
-                    <Tooltip title="Cuenta como presente: suma en 'Trabajando'">
-                      <InfoCircleOutlined />
-                    </Tooltip>
-                  )}
                 </>
               }
               value={c.cantidad}

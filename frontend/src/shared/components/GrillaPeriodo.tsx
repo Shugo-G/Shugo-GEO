@@ -4,12 +4,11 @@ import dayjs from 'dayjs';
 import type { Params } from '@/core/api/types';
 import { COLOR_ACTIVO } from '@/app/theme';
 import { useGrilla } from '@/shared/api/grilla';
-import FotoEmpleado from './FotoEmpleado';
 
 interface Props {
   params: Params;
-  /** Para la leyenda de colores. */
-  categorias: { id: number; nombre: string; color: string }[];
+  /** Artículos de licencia, para la leyenda de colores. */
+  articulos: { id: number; nombre: string; color: string }[];
   /** Cuando la página ya muestra la leyenda de colores. */
   ocultarLeyenda?: boolean;
 }
@@ -18,7 +17,7 @@ interface Props {
  * Grilla empleado × día. Responde "¿cómo estará conformado el equipo durante
  * un determinado período?" y muestra cuántos agentes trabajan cada día hábil.
  */
-export default function GrillaPeriodo({ params, categorias, ocultarLeyenda = false }: Props) {
+export default function GrillaPeriodo({ params, articulos, ocultarLeyenda = false }: Props) {
   const { data, isLoading, isFetching } = useGrilla(params, true);
   const hoy = dayjs().format('YYYY-MM-DD');
 
@@ -29,8 +28,8 @@ export default function GrillaPeriodo({ params, categorias, ocultarLeyenda = fal
     <Spin spinning={isFetching && !isLoading}>
       <Space wrap size={16} style={{ marginBottom: 12, display: ocultarLeyenda ? 'none' : undefined }}>
         <Badge color={COLOR_ACTIVO} text="Trabajando (celda vacía)" />
-        {categorias.map((c) => (
-          <Badge key={c.id} color={c.color} text={c.nombre} />
+        {articulos.map((t) => (
+          <Badge key={t.id} color={t.color} text={t.nombre} />
         ))}
         <span>
           <span style={{ display: 'inline-block', width: 12, height: 12, background: '#f0f0f0', borderRadius: 2, marginRight: 6 }} />
@@ -63,7 +62,6 @@ export default function GrillaPeriodo({ params, categorias, ocultarLeyenda = fal
             {data.empleados.map((emp) => (
               <tr key={emp.id}>
                 <td className="col-empleado">
-                  <FotoEmpleado url={emp.foto_url} nombre={emp.nombre} tamanio={22} />{' '}
                   <Link to={`/personal/${emp.id}`}>{emp.nombre}</Link>
                   <Typography.Text type="secondary" style={{ fontSize: 11, marginLeft: 6 }}>
                     {emp.unidad}

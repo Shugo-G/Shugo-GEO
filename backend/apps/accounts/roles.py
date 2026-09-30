@@ -12,7 +12,7 @@ ROL_ADMINISTRADOR = "Administrador"
 ROL_CONSULTA = "Consulta"
 
 # Apps de negocio cuyos permisos se asignan a los roles.
-APPS_NEGOCIO = ["organizacion", "personal", "calendario", "novedades", "vacaciones", "patrimonio"]
+APPS_NEGOCIO = ["organizacion", "personal", "calendario", "novedades", "vacaciones", "patrimonio", "servicios"]
 
 # Permisos que el rol de consulta NO debe tener aunque sean de lectura
 # (la documentación respaldatoria puede contener datos sensibles).

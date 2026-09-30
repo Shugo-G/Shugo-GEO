@@ -18,7 +18,7 @@ export function limpiarParams(params: Params = {}): Record<string, string | numb
 
 /**
  * Fábrica de API + hooks para un recurso REST estándar (ModelViewSet).
- * Uso: export const puestosApi = crearRecurso<Puesto>('organizacion/puestos');
+ * Uso: export const modalidadesApi = crearRecurso<Modalidad>('organizacion/modalidades');
  */
 export function crearRecurso<T extends { id: number }, TInput = Partial<T>>(ruta: string) {
   const base = `/${ruta.replace(/^\/|\/$/g, '')}/`;

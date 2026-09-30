@@ -41,7 +41,7 @@ class MovimientoSaldo(TimeStampedModel):
     )
     tipo_novedad = models.ForeignKey(
         "novedades.TipoNovedad",
-        verbose_name="tipo de licencia",
+        verbose_name="artículo de licencia",
         on_delete=models.PROTECT,
         limit_choices_to={"descuenta_saldo": True},
         related_name="movimientos_saldo",

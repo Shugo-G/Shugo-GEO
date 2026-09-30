@@ -7,7 +7,7 @@ const PERMISO = 'vacaciones.view_movimientosaldo';
 const vacaciones: AppModule = {
   key: 'vacaciones',
   orden: 30,
-  menu: [{ key: 'vacaciones', label: 'Vacaciones y saldos', icon: <SunOutlined />, path: '/vacaciones', permiso: PERMISO }],
+  menu: [{ key: 'vacaciones', label: 'Estado de licencias', icon: <SunOutlined />, path: '/vacaciones', permiso: PERMISO }],
   routes: [{ path: '/vacaciones', component: lazy(() => import('./pages/SaldosPage')), permiso: PERMISO }],
 };
 

@@ -10,7 +10,7 @@ dni_validator = RegexValidator(r"^\d{7,9}$", "El DNI debe tener entre 7 y 9 díg
 
 
 def _ruta_foto(instance, filename):
-    # Nombre aleatorio: la URL no es adivinable a partir del empleado.
+    # Ya no se usa (las fotos se quitaron); se conserva porque la importa la migración 0005.
     return f"fotos/{uuid.uuid4().hex}.jpg"
 
 
@@ -32,7 +32,7 @@ class EmpleadoQuerySet(models.QuerySet):
         return self.filter(situacion_revista=SituacionRevista.ACTIVO)
 
     def con_relaciones(self):
-        return self.select_related("unidad", "puesto", "modalidad")
+        return self.select_related("unidad", "modalidad")
 
 
 class Empleado(TimeStampedModel):
@@ -46,7 +46,6 @@ class Empleado(TimeStampedModel):
         help_text="Para modalidades sin legajo propio se usa el DNI.",
     )
     fecha_nacimiento = models.DateField("fecha de nacimiento", null=True, blank=True)
-    foto = models.ImageField("foto", upload_to=_ruta_foto, null=True, blank=True)
 
     unidad = models.ForeignKey(
         "organizacion.UnidadOrganizativa",
@@ -54,14 +53,6 @@ class Empleado(TimeStampedModel):
         on_delete=models.PROTECT,
         related_name="empleados",
         help_text="Dirección General, Dirección o Área de la que depende el agente.",
-    )
-    puesto = models.ForeignKey(
-        "organizacion.Puesto",
-        verbose_name="puesto / función",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name="empleados",
     )
     modalidad = models.ForeignKey(
         "organizacion.ModalidadContratacion",

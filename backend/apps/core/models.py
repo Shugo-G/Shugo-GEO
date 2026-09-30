@@ -24,7 +24,7 @@ class TimeStampedModel(models.Model):
 
 class CatalogoBase(TimeStampedModel):
     """
-    Base para tablas configurables por el administrador (áreas, puestos,
+    Base para tablas configurables por el administrador (áreas,
     modalidades, tipos de novedad, etc.). Nunca se borran si están en uso:
     se desactivan con `activo=False`.
     """

@@ -6,7 +6,7 @@ const novedades: AppModule = {
   key: 'novedades',
   orden: 20,
   menu: [
-    { key: 'novedades', label: 'Licencias y ausencias', icon: <ScheduleOutlined />, path: '/novedades', permiso: 'novedades.view_novedad' },
+    { key: 'novedades', label: 'Licencias del personal', icon: <ScheduleOutlined />, path: '/novedades', permiso: 'novedades.view_novedad' },
   ],
   routes: [{ path: '/novedades', component: lazy(() => import('./pages/NovedadesPage')), permiso: 'novedades.view_novedad' }],
 };

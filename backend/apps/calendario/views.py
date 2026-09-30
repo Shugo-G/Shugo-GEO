@@ -52,7 +52,7 @@ class DiaNoLaborableViewSet(AuditedModelViewSet):
 class EventosCalendarioView(APIView):
     """
     Eventos para el calendario general: novedades del personal y días no
-    laborables dentro del período, con los mismos filtros del dashboard.
+    laborables dentro del período, con los mismos filtros del Inicio (`tipo` = artículos).
     """
 
     permission_classes = [requiere_permisos("novedades.view_novedad", "calendario.view_dianolaborable")]
@@ -61,9 +61,8 @@ class EventosCalendarioView(APIView):
         desde, hasta = parse_periodo(request.query_params, max_dias=190)
         empleados = filtrar_empleados(request.query_params)
         novedades = novedades_en_periodo(desde, hasta).filter(empleado__in=empleados)
-        categorias = request.query_params.get("categoria")
-        if categorias:
-            novedades = novedades.filter(tipo__categoria_id__in=categorias.split(","))
+        if tipos := request.query_params.get("tipo"):
+            novedades = novedades.filter(tipo_id__in=tipos.split(","))
 
         arbol = Arbol()
         eventos = [
@@ -71,13 +70,10 @@ class EventosCalendarioView(APIView):
                 "id": n.id,
                 "empleado_id": n.empleado_id,
                 "empleado": n.empleado.nombre_completo,
-                "foto_url": n.empleado.foto.url if n.empleado.foto else None,
                 "unidad": arbol.ruta(n.empleado.unidad_id),
+                "tipo_id": n.tipo_id,
                 "tipo": n.tipo.nombre,
-                "categoria_id": n.tipo.categoria_id,
-                "categoria": n.tipo.categoria.nombre,
-                "cuenta_como_presente": n.tipo.categoria.cuenta_como_presente,
-                "color": n.tipo.color_efectivo,
+                "color": n.tipo.color,
                 "desde": n.fecha_desde,
                 "hasta": n.fecha_hasta,
                 "abierta": n.fecha_hasta is None,

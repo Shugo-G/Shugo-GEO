@@ -36,7 +36,6 @@ services:
       - "${HTTP_PORT:-80}:80"
     volumes:
       - static:/static:ro
-      - media:/media-data:ro   # nginx sólo expone /media/fotos/
     depends_on:
       - backend
 

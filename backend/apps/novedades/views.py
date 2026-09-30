@@ -9,9 +9,8 @@ from apps.core.fechas import parse_fecha_param
 from apps.core.viewsets import AuditedModelViewSet, CatalogoViewSet
 
 from .filters import NovedadFilter
-from .models import CategoriaEstado, DocumentoNovedad, Novedad, TipoNovedad
+from .models import DocumentoNovedad, Novedad, TipoNovedad
 from .serializers import (
-    CategoriaEstadoSerializer,
     DocumentoNovedadSerializer,
     NovedadSerializer,
     TipoNovedadSerializer,
@@ -19,15 +18,10 @@ from .serializers import (
 from .services import anular_novedad, calcular_dias, eliminar_tipo, interrumpir_novedad, puede_eliminarse
 
 
-class CategoriaEstadoViewSet(CatalogoViewSet):
-    queryset = CategoriaEstado.objects.all()
-    serializer_class = CategoriaEstadoSerializer
-
-
 class TipoNovedadViewSet(CatalogoViewSet):
-    queryset = TipoNovedad.objects.select_related("categoria")
+    queryset = TipoNovedad.objects.all()
     serializer_class = TipoNovedadSerializer
-    filterset_fields = ["activo", "categoria", "descuenta_saldo", "mostrar_saldo"]
+    filterset_fields = ["activo", "descuenta_saldo", "mostrar_saldo"]
 
     def perform_destroy(self, instance):
         # Las licencias anuladas no bloquean: se eliminan junto con el tipo.

@@ -16,7 +16,7 @@ interface Props {
 
 type Fila =
   | { clave: string; clase: 'bolsa'; saldo: Saldo }
-  | { clave: string; clase: 'subtotal' | 'total'; titulo: string; valores: Totales };
+  | { clave: string; clase: 'total'; titulo: string; valores: Totales };
 
 type Totales = Pick<Saldo, 'acreditados' | 'usados' | 'programados' | 'disponible'>;
 
@@ -74,27 +74,16 @@ function ElegirVisibles({ empleadoId, saldos }: { empleadoId: number; saldos: Sa
 }
 
 /**
- * Saldos del agente en una sola tabla: una fila por bolsa de días, subtotal por
- * categoría (p. ej. todas las licencias de vacaciones, de cualquier año) y total
+ * Saldos del agente en una sola tabla: una fila por bolsa de días y el total
  * general. Qué bolsas se ven se elige por agente; sin elección, se muestran las
- * que tienen movimientos (y no están marcadas "no mostrar saldo" en el tipo).
+ * que tienen movimientos (y no están marcadas "no mostrar saldo" en el artículo).
  */
 export default function SaldosEmpleado({ empleadoId, saldos, onCompensar }: Props) {
   const puedeElegir = usePermiso('personal.change_empleado');
   const visibles = saldos.filter((s) => s.visible);
   const ocultas = saldos.length - visibles.length;
 
-  // Agrupar por categoría, respetando el orden en que llegan.
-  const grupos = new Map<number, Saldo[]>();
-  visibles.forEach((s) => grupos.set(s.categoria_id, [...(grupos.get(s.categoria_id) ?? []), s]));
-
-  const filas: Fila[] = [];
-  grupos.forEach((grupo) => {
-    grupo.forEach((s) => filas.push({ clave: `b${s.tipo_id}`, clase: 'bolsa', saldo: s }));
-    if (grupo.length > 1) {
-      filas.push({ clave: `c${grupo[0].categoria_id}`, clase: 'subtotal', titulo: `Total ${grupo[0].categoria}`, valores: sumar(grupo) });
-    }
-  });
+  const filas: Fila[] = visibles.map((s) => ({ clave: `b${s.tipo_id}`, clase: 'bolsa', saldo: s }));
   if (visibles.length > 1) filas.push({ clave: 'total', clase: 'total', titulo: 'TOTAL', valores: sumar(visibles) });
 
   const columnas: TableColumnsType<Fila> = [

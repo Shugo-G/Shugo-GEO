@@ -46,16 +46,6 @@ class UnidadOrganizativa(CatalogoBase):
         constraints = [models.UniqueConstraint(fields=["padre", "nombre"], name="unidad_nombre_unico_por_padre")]
 
 
-class Puesto(CatalogoBase):
-    """Puesto o función del agente."""
-
-    history = HistoricalRecords()
-
-    class Meta(CatalogoBase.Meta):
-        verbose_name = "puesto"
-        verbose_name_plural = "puestos"
-
-
 class ModalidadContratacion(CatalogoBase):
     """Modalidad de contratación (Planta permanente, Contrato, Pasante...)."""
 

@@ -10,8 +10,6 @@ class EmpleadoSerializer(serializers.ModelSerializer):
     unidad_nombre = serializers.CharField(source="unidad.nombre", read_only=True)
     unidad_tipo = serializers.CharField(source="unidad.get_tipo_display", read_only=True)
     unidad_ruta = serializers.SerializerMethodField()
-    foto_url = serializers.SerializerMethodField()
-    puesto_nombre = serializers.CharField(source="puesto.nombre", read_only=True, default=None)
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
     situacion_revista_display = serializers.CharField(source="get_situacion_revista_display", read_only=True)
     legajo = serializers.CharField(max_length=20, required=False, allow_blank=True)
@@ -26,13 +24,10 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             "dni",
             "legajo",
             "fecha_nacimiento",
-            "foto_url",
             "unidad",
             "unidad_nombre",
             "unidad_tipo",
             "unidad_ruta",
-            "puesto",
-            "puesto_nombre",
             "modalidad",
             "modalidad_nombre",
             "fecha_ingreso",
@@ -44,9 +39,6 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             "fecha_baja",
             "observaciones",
         ]
-
-    def get_foto_url(self, obj):
-        return obj.foto.url if obj.foto else None
 
     def get_unidad_ruta(self, obj):
         # Un solo árbol por request aunque se serialicen muchos empleados.

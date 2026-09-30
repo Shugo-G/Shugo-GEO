@@ -18,5 +18,7 @@ INSUMOS = [
 
 
 def cargar():
-    for orden, nombre in enumerate(INSUMOS, start=1):
-        TipoInsumo.objects.get_or_create(nombre=nombre, defaults={"orden": orden})
+    # Sólo en una instalación nueva: lo que el administrador borre o renombre no vuelve.
+    if not TipoInsumo.objects.exists():
+        for orden, nombre in enumerate(INSUMOS, start=1):
+            TipoInsumo.objects.create(nombre=nombre, orden=orden)

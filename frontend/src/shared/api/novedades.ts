@@ -24,8 +24,6 @@ export interface Novedad {
   unidad_nombre: string;
   tipo: number;
   tipo_nombre: string;
-  categoria_id: number;
-  categoria_nombre: string;
   color: string;
   fecha_desde: string;
   fecha_hasta: string | null;

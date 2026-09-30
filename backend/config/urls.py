@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -16,6 +14,7 @@ API_MODULES = [
     ("vacaciones/", "apps.vacaciones.urls"),
     ("dashboard/", "apps.dashboard.urls"),
     ("patrimonio/", "apps.patrimonio.urls"),
+    ("servicios/", "apps.servicios.urls"),
     ("reportes/", "apps.reportes.urls"),
 ]
 
@@ -26,7 +25,5 @@ urlpatterns = [
     *[path(f"api/{prefix}", include(module)) for prefix, module in API_MODULES],
 ]
 
-if settings.DEBUG:
-    # En desarrollo sólo se sirven las fotos. La documentación respaldatoria
-    # nunca es pública: se descarga por la API con autenticación.
-    urlpatterns += static(f"{settings.MEDIA_URL}fotos/", document_root=f"{settings.MEDIA_ROOT}/fotos")
+# Los archivos subidos (documentación, planillas) nunca son públicos: se
+# descargan por la API con autenticación.

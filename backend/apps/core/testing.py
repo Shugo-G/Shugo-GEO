@@ -33,7 +33,6 @@ def datos_base():
         "pasante": ModalidadContratacion.objects.get(nombre="Pasante"),
         "vacaciones": TipoNovedad.objects.get(nombre="Licencia vacaciones"),
         "medica": TipoNovedad.objects.get(nombre="Licencia médica"),
-        "comision": TipoNovedad.objects.get(nombre="Comisión de servicio"),
         "ausencia": TipoNovedad.objects.get(nombre="Ausencia"),
     }
 

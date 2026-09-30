@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge, Empty, Tag, Tooltip, Typography } from 'antd';
 import { fmtFechaCorta } from '@/core/utils/format';
 import { COLOR_ACTIVO } from '@/app/theme';
-import FotoEmpleado from '@/shared/components/FotoEmpleado';
+import IconoPersona from '@/shared/components/IconoPersona';
 import type { EstadoPersonal, FilaEstado } from '../api';
 
 interface Props {
@@ -12,12 +12,9 @@ interface Props {
   ocultarVacias: boolean;
 }
 
-/**
- * Novedad que define la tarjeta (color y posición): primero una que implique
- * ausencia (vacaciones, licencia...), si no la de una comisión. Sin novedades: activo.
- */
+/** Licencia que define la tarjeta (color y posición): la primera vigente. Sin licencias: activo. */
 function novedadPrincipal(fila: FilaEstado) {
-  return fila.novedades.find((n) => !n.cuenta_como_presente) ?? fila.novedades[0];
+  return fila.novedades[0];
 }
 
 function colorEstado(fila: FilaEstado): string {
@@ -25,23 +22,18 @@ function colorEstado(fila: FilaEstado): string {
 }
 
 /**
- * Orden de las tarjetas: primero los activos (sin novedades); después el resto
- * agrupado por licencia, según el orden de las categorías configuradas y luego
- * por tipo; dentro de cada grupo, alfabético.
+ * Orden de las tarjetas: primero los activos (sin licencias); después el resto
+ * agrupado por artículo de licencia, en el orden configurado; dentro de cada
+ * grupo, alfabético.
  */
-function ordenarAgentes(filas: FilaEstado[], ordenCategorias: number[]): FilaEstado[] {
+function ordenarAgentes(filas: FilaEstado[], ordenArticulos: number[]): FilaEstado[] {
   const posicion = (fila: FilaEstado) => {
     const n = novedadPrincipal(fila);
     if (!n) return -1;
-    const i = ordenCategorias.indexOf(n.categoria_id);
-    return i === -1 ? ordenCategorias.length : i;
+    const i = ordenArticulos.indexOf(n.tipo_id);
+    return i === -1 ? ordenArticulos.length : i;
   };
-  return [...filas].sort(
-    (a, b) =>
-      posicion(a) - posicion(b) ||
-      (novedadPrincipal(a)?.tipo ?? '').localeCompare(novedadPrincipal(b)?.tipo ?? '') ||
-      a.nombre.localeCompare(b.nombre),
-  );
+  return [...filas].sort((a, b) => posicion(a) - posicion(b) || a.nombre.localeCompare(b.nombre));
 }
 
 /** Área (o unidad) dentro de la dirección; vacío si depende directamente de la dirección. */
@@ -50,7 +42,7 @@ function subunidad(fila: FilaEstado): string | null {
   return fila.unidad === fila.direccion ? null : partes.slice(partes.indexOf(fila.direccion) + 1).join(' › ') || fila.unidad;
 }
 
-/** Tarjeta cuadrada: foto arriba y, debajo, nombre, área y estado. El color indica el estado. */
+/** Tarjeta cuadrada: ícono de persona con el color del estado, nombre, área y estado; la línea de color va abajo. */
 function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   const navigate = useNavigate();
   const color = colorEstado(fila);
@@ -58,13 +50,13 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   return (
     <div
       className="tarjeta-agente"
-      style={{ borderTopColor: color, background: `${color}14` }}
+      style={{ borderBottomColor: color, background: `${color}14` }}
       onClick={() => navigate(`/personal/${fila.id}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/personal/${fila.id}`)}
     >
-      <FotoEmpleado url={fila.foto_url} nombre={fila.nombre} tamanio={64} />
+      <IconoPersona color={color} tamanio={64} />
       <Typography.Text strong className="tarjeta-agente-nombre" ellipsis={{ tooltip: fila.nombre }}>
         {fila.nombre}
       </Typography.Text>
@@ -76,7 +68,7 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
           <Badge color={COLOR_ACTIVO} text="Activo" />
         ) : (
           fila.novedades.map((n) => (
-            <Tooltip key={n.id} title={n.motivo || n.categoria}>
+            <Tooltip key={n.id} title={n.motivo || n.tipo}>
               <div className="tarjeta-agente-novedad">
                 <Badge color={n.color} text={n.tipo} />
                 <div className="tarjeta-agente-fechas">
@@ -110,9 +102,9 @@ function centrarDireccionGeneral<T extends { tipo: string }>(grupos: T[]): T[] {
   return [...direcciones.slice(0, mitad), ...generales, ...direcciones.slice(mitad)];
 }
 
-/** Vista del dashboard: una columna por dirección y una tarjeta por agente. */
+/** Vista del Inicio: una columna por dirección y una tarjeta por agente. */
 export default function TarjetasPorDireccion({ datos, filas, ocultarVacias }: Props) {
-  const ordenCategorias = datos.resumen.por_categoria.map((c) => c.id);
+  const ordenArticulos = datos.resumen.por_tipo.map((t) => t.id);
   const porGrupo = new Map<number | null, FilaEstado[]>();
   filas.forEach((f) => porGrupo.set(f.direccion_id, [...(porGrupo.get(f.direccion_id) ?? []), f]));
 
@@ -150,7 +142,7 @@ export default function TarjetasPorDireccion({ datos, filas, ocultarVacias }: Pr
             </header>
             <div className="columna-direccion-tarjetas">
               {c.filas.length ? (
-                ordenarAgentes(c.filas, ordenCategorias).map((f) => <TarjetaAgente key={f.id} fila={f} />)
+                ordenarAgentes(c.filas, ordenArticulos).map((f) => <TarjetaAgente key={f.id} fila={f} />)
               ) : (
                 <Typography.Text type="secondary" style={{ padding: 12 }}>
                   Sin agentes

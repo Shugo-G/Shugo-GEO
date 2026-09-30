@@ -48,8 +48,7 @@ export default function InventarioPage() {
   return (
     <>
       <PageHeader
-        titulo="Inventario patrimonial"
-        subtitulo="Bienes a cargo del personal, con planilla de cargo, IUB y legajo del responsable"
+        titulo="Cargos patrimoniales"
         acciones={
           <>
             <Dropdown

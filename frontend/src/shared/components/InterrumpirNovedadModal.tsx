@@ -101,7 +101,7 @@ export default function InterrumpirNovedadModal({ novedad, onClose }: { novedad:
               message={
                 novedad.descuenta_saldo
                   ? `Quedarán ${diasNuevos} día(s) tomados y se reintegrarán ${reintegro} día(s) al saldo.`
-                  : `Quedarán ${diasNuevos} día(s) registrados. Este tipo de licencia no descuenta saldo.`
+                  : `Quedarán ${diasNuevos} día(s) registrados. Este artículo de licencia no descuenta saldo.`
               }
             />
           )}

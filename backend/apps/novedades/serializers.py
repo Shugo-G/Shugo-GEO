@@ -3,29 +3,18 @@ from rest_framework import serializers
 from apps.core.archivos import tamanio_adjunto, validar_adjunto
 from apps.core.serializers import CatalogoSerializer
 
-from .models import CategoriaEstado, DocumentoNovedad, EstadoNovedad, Novedad, TipoNovedad
+from .models import DocumentoNovedad, EstadoNovedad, Novedad, TipoNovedad
 from .services import calcular_dias, puede_eliminarse, validar_edicion, validar_novedad
 
 
-class CategoriaEstadoSerializer(CatalogoSerializer):
-    class Meta(CatalogoSerializer.Meta):
-        model = CategoriaEstado
-        fields = CatalogoSerializer.Meta.fields + ["color", "cuenta_como_presente"]
-
-
 class TipoNovedadSerializer(CatalogoSerializer):
-    categoria_nombre = serializers.CharField(source="categoria.nombre", read_only=True)
-    color_efectivo = serializers.CharField(read_only=True)
     computo_dias_display = serializers.CharField(source="get_computo_dias_display", read_only=True)
     saldo_de_nombre = serializers.CharField(source="saldo_de.nombre", read_only=True, default=None)
 
     class Meta(CatalogoSerializer.Meta):
         model = TipoNovedad
         fields = CatalogoSerializer.Meta.fields + [
-            "categoria",
-            "categoria_nombre",
             "color",
-            "color_efectivo",
             "computo_dias",
             "computo_dias_display",
             "descuenta_saldo",
@@ -45,11 +34,11 @@ class TipoNovedadSerializer(CatalogoSerializer):
             return attrs
         errores = {}
         if self.instance and saldo_de.pk == self.instance.pk:
-            errores["saldo_de"] = "Un tipo no puede usar su propio saldo como compartido."
+            errores["saldo_de"] = "Un artículo no puede usar su propio saldo como compartido."
         elif saldo_de.saldo_de_id or not saldo_de.descuenta_saldo:
-            errores["saldo_de"] = "Debe elegir un tipo que tenga saldo propio."
+            errores["saldo_de"] = "Debe elegir un artículo que tenga saldo propio."
         elif self.instance and self.instance.tipos_que_comparten_saldo.exists():
-            errores["saldo_de"] = "Otros tipos usan el saldo de éste; no puede, a su vez, usar el de otro."
+            errores["saldo_de"] = "Otros artículos usan el saldo de éste; no puede, a su vez, usar el de otro."
         if errores:
             raise serializers.ValidationError(errores)
         # Compartir saldo implica descontar saldo.
@@ -83,9 +72,7 @@ class NovedadSerializer(serializers.ModelSerializer):
     empleado_legajo = serializers.CharField(source="empleado.legajo", read_only=True)
     unidad_nombre = serializers.CharField(source="empleado.unidad.nombre", read_only=True)
     tipo_nombre = serializers.CharField(source="tipo.nombre", read_only=True)
-    categoria_id = serializers.IntegerField(source="tipo.categoria_id", read_only=True)
-    categoria_nombre = serializers.CharField(source="tipo.categoria.nombre", read_only=True)
-    color = serializers.CharField(source="tipo.color_efectivo", read_only=True)
+    color = serializers.CharField(source="tipo.color", read_only=True)
     abierta = serializers.BooleanField(read_only=True)
     descuenta_saldo = serializers.BooleanField(source="tipo.descuenta_saldo", read_only=True)
     interrumpida = serializers.BooleanField(read_only=True)
@@ -117,8 +104,6 @@ class NovedadSerializer(serializers.ModelSerializer):
             "unidad_nombre",
             "tipo",
             "tipo_nombre",
-            "categoria_id",
-            "categoria_nombre",
             "color",
             "fecha_desde",
             "fecha_hasta",

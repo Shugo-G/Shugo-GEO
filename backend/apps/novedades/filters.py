@@ -9,7 +9,6 @@ from .models import Novedad
 class NovedadFilter(django_filters.FilterSet):
     empleado = django_filters.BaseInFilter(field_name="empleado_id")
     tipo = django_filters.BaseInFilter(field_name="tipo_id")
-    categoria = django_filters.BaseInFilter(field_name="tipo__categoria_id")
     unidad = django_filters.CharFilter(method="filtrar_unidad")
     modalidad = django_filters.BaseInFilter(field_name="empleado__modalidad_id")
     descuenta_saldo = django_filters.BooleanFilter(field_name="tipo__descuenta_saldo")
@@ -26,7 +25,7 @@ class NovedadFilter(django_filters.FilterSet):
 
     class Meta:
         model = Novedad
-        fields = ["empleado", "tipo", "categoria", "unidad", "modalidad", "abierta"]
+        fields = ["empleado", "tipo", "unidad", "modalidad", "abierta"]
 
     def filtrar_unidad(self, queryset, name, value):
         unidades = unidades_con_descendientes(value)

@@ -32,7 +32,6 @@ export default function UsuariosPage() {
   return (
     <CrudPage<UsuarioSistema>
       titulo="Usuarios"
-      subtitulo="Cuentas de acceso al sistema y sus roles (Administrador / Consulta)"
       recurso={usuariosApi}
       permiso="accounts.user"
       campos={[

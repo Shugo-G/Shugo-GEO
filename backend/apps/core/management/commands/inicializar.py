@@ -7,12 +7,14 @@ from apps.core.fechas import hoy
 from apps.novedades import seeds as seeds_novedades
 from apps.organizacion import seeds as seeds_organizacion
 from apps.patrimonio import seeds as seeds_patrimonio
+from apps.servicios import seeds as seeds_servicios
 
 # Seeds de cada módulo, en orden de dependencia. Un módulo nuevo agrega el suyo acá.
 SEEDS = [
     ("Modalidades de contratación", seeds_organizacion.cargar),
-    ("Categorías y tipos de novedad", seeds_novedades.cargar),
-    ("Tipos de insumo", seeds_patrimonio.cargar),
+    ("Artículos de licencia", seeds_novedades.cargar),
+    ("Categorías de insumo", seeds_patrimonio.cargar),
+    ("Categorías de servicios", seeds_servicios.cargar),
 ]
 
 

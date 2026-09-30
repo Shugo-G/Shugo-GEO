@@ -8,7 +8,7 @@ export interface InfoDia {
   noLaborable?: DiaNoLaborable;
   /** Novedades vigentes ese día (sólo en días laborables). */
   novedades: EventoNovedad[];
-  /** Cantidad de agentes que no están trabajando (excluye comisiones). */
+  /** Cantidad de licencias vigentes ese día (agentes que no están trabajando). */
   ausentes: number;
 }
 
@@ -42,7 +42,7 @@ export function construirDias(
       const info = dias.get(d.format('YYYY-MM-DD'));
       if (!info || !info.laborable) continue;
       info.novedades.push(n);
-      if (!n.cuenta_como_presente) info.ausentes += 1;
+      info.ausentes += 1;
     }
   }
   return dias;

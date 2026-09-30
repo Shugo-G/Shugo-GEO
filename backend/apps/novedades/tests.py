@@ -169,3 +169,19 @@ class ProteccionNovedadesTests(TestCase):
         historial = {n["id"] for n in self.api.get("/api/novedades/", {"situacion": "historial"}).data["results"]}
         self.assertEqual(activas, {self.en_curso.id, self.programada.id})
         self.assertEqual(historial, {self.finalizada.id})
+
+
+
+class SeedsArticulosTests(TestCase):
+    def test_instalacion_nueva_y_sin_recrear_lo_borrado(self):
+        from . import seeds
+        from .models import TipoNovedad
+
+        seeds.cargar()
+        nombres = list(TipoNovedad.objects.values_list("nombre", flat=True))
+        self.assertEqual(nombres, ["Licencia vacaciones", "Licencia invernal", "Licencia médica", "Ausencia"])
+        invernal = TipoNovedad.objects.get(nombre="Licencia invernal")
+        self.assertEqual(invernal.saldo_de.nombre, "Licencia vacaciones")
+        TipoNovedad.objects.filter(nombre="Ausencia").delete()
+        seeds.cargar()  # inicializar corre en cada arranque del contenedor
+        self.assertFalse(TipoNovedad.objects.filter(nombre="Ausencia").exists())

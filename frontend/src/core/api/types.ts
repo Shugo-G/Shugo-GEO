@@ -20,15 +20,12 @@ export interface Opcion<V = string> {
   label: string;
 }
 
-/** Resumen de una novedad tal como la devuelven dashboard y ficha. */
+/** Resumen de una novedad tal como la devuelven el Inicio y la ficha. */
 export interface NovedadResumen {
   id: number;
   tipo_id: number;
   tipo: string;
-  categoria_id: number;
-  categoria: string;
   color: string;
-  cuenta_como_presente: boolean;
   desde: string;
   hasta: string | null;
   dias: number | null;
@@ -56,8 +53,6 @@ export interface SaldoDetalle {
 export interface Saldo {
   tipo_id: number;
   tipo: string;
-  categoria_id: number;
-  categoria: string;
   color: string;
   /** false si el tipo está marcado "no mostrar saldo" (p. ej. licencia de un año ya consumida). */
   mostrar: boolean;

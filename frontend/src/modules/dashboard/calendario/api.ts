@@ -7,12 +7,9 @@ export interface EventoNovedad {
   id: number;
   empleado_id: number;
   empleado: string;
-  foto_url: string | null;
   unidad: string;
+  tipo_id: number;
   tipo: string;
-  categoria_id: number;
-  categoria: string;
-  cuenta_como_presente: boolean;
   color: string;
   desde: string;
   hasta: string | null;

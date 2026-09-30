@@ -105,7 +105,7 @@ class BolsaCompartidaTests(TestCase):
         # Vacaciones es la bolsa de invernal: no puede a su vez usar el saldo de otro tipo
         otro = self.api.post(
             "/api/novedades/tipos/",
-            {"nombre": "Otra", "categoria": self.invernal.categoria_id, "descuenta_saldo": True},
+            {"nombre": "Otra", "color": "#13c2c2", "descuenta_saldo": True},
             format="json",
         ).data
         r = self.api.patch(f"/api/novedades/tipos/{self.vacaciones.id}/", {"saldo_de": otro["id"]}, format="json")
@@ -116,25 +116,25 @@ class BolsaCompartidaTests(TestCase):
 
 class BolsasVisiblesYUsoTests(TestCase):
     def setUp(self):
-        from apps.novedades.models import CategoriaEstado, TipoNovedad
+        from apps.novedades.models import TipoNovedad
 
         self.d = datos_base()
         self.api = cliente()
         self.empleado = crear_empleado(self.d["area"], self.d["planta"])
         self.otro = crear_empleado(self.d["area"], self.d["planta"], 2)
-        vacaciones_cat = CategoriaEstado.objects.get(nombre="Vacaciones")
-        self.lic2025 = TipoNovedad.objects.create(nombre="Licencia 2025", categoria=vacaciones_cat, descuenta_saldo=True)
+        self.lic2025 = TipoNovedad.objects.create(nombre="Licencia 2025", color="#faad14", descuenta_saldo=True)
         for tipo, dias in ((self.d["vacaciones"], 20), (self.lic2025, 5)):
             MovimientoSaldo.objects.create(
                 empleado=self.empleado, tipo_novedad=tipo, concepto=ConceptoMovimiento.ASIGNACION, anio=2026, dias=dias, fecha=date(2026, 1, 1)
             )
 
-    def test_saldo_informa_categoria_y_actividad(self):
+    def test_saldo_informa_color_y_actividad(self):
         from .services import saldos_por_empleado
 
         saldos = saldos_por_empleado([self.empleado.id, self.otro.id])
         s = saldos[self.empleado.id][self.lic2025.id]
-        self.assertEqual((s["categoria"], s["con_movimientos"], s["mostrar"]), ("Vacaciones", True, True))
+        self.assertEqual((s["color"], s["con_movimientos"], s["mostrar"]), ("#faad14", True, True))
+        self.assertNotIn("categoria", s)
         self.assertFalse(saldos[self.otro.id][self.lic2025.id]["con_movimientos"])
 
     def test_bolsa_oculta_no_aparece_en_saldos_ni_reporte(self):
@@ -163,13 +163,12 @@ class BolsasVisiblesYUsoTests(TestCase):
 
 class PreferenciasYEliminacionTests(TestCase):
     def setUp(self):
-        from apps.novedades.models import CategoriaEstado, TipoNovedad
+        from apps.novedades.models import TipoNovedad
 
         self.d = datos_base()
         self.api = cliente()
         self.empleado = crear_empleado(self.d["area"], self.d["planta"])
-        cat = CategoriaEstado.objects.get(nombre="Vacaciones")
-        self.lic2027 = TipoNovedad.objects.create(nombre="Licencia invierno 2027", categoria=cat, descuenta_saldo=True)
+        self.lic2027 = TipoNovedad.objects.create(nombre="Licencia invierno 2027", descuenta_saldo=True)
         MovimientoSaldo.objects.create(
             empleado=self.empleado, tipo_novedad=self.d["vacaciones"], concepto=ConceptoMovimiento.ASIGNACION, anio=2026, dias=10, fecha=date(2026, 1, 1)
         )

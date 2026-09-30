@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Card,
-  ColorPicker,
   DatePicker,
   Form,
   Input,
@@ -28,6 +27,7 @@ import { useAuth } from '@/core/auth/AuthContext';
 import { FORMATO_FECHA, fmtFecha } from '@/core/utils/format';
 import HistorialCambios from './HistorialCambios';
 import PageHeader from './PageHeader';
+import SelectorColor from './SelectorColor';
 
 export type TipoCampo = 'texto' | 'textarea' | 'numero' | 'switch' | 'color' | 'select' | 'fecha';
 
@@ -50,10 +50,11 @@ export interface CampoCrud<T> {
 
 interface Props<T extends { id: number }> {
   titulo: string;
-  subtitulo?: string;
+  /** Sin encabezado de página: para usarla dentro de pestañas (las acciones van junto a la búsqueda). */
+  embebida?: boolean;
   recurso: ReturnType<typeof crearRecurso<T>>;
   campos: CampoCrud<T>[];
-  /** "app.modelo" para derivar permisos add/change/delete (ej. "organizacion.puesto"). */
+  /** "app.modelo" para derivar permisos add/change/delete (ej. "organizacion.modalidadcontratacion"). */
   permiso: string;
   /** Parámetros fijos de listado (filtros, orden). */
   params?: Params;
@@ -84,7 +85,7 @@ function entrada<T>(campo: CampoCrud<T>) {
     case 'switch':
       return <Switch />;
     case 'color':
-      return <ColorPicker showText format="hex" />;
+      return <SelectorColor />;
     case 'select':
       return <Select options={campo.opciones} allowClear={!campo.requerido} />;
     case 'fecha':
@@ -101,7 +102,7 @@ function entrada<T>(campo: CampoCrud<T>) {
  */
 export default function CrudPage<T extends { id: number }>({
   titulo,
-  subtitulo,
+  embebida = false,
   recurso,
   campos,
   permiso,
@@ -193,24 +194,23 @@ export default function CrudPage<T extends { id: number }>({
     },
   ];
 
+  const acciones = (
+    <>
+      {accionesExtra}
+      {puede('add') && (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => abrir(null)}>
+          Nuevo
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <>
-      <PageHeader
-        titulo={titulo}
-        subtitulo={subtitulo}
-        acciones={
-          <>
-            {accionesExtra}
-            {puede('add') && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => abrir(null)}>
-                Nuevo
-              </Button>
-            )}
-          </>
-        }
-      />
+      {!embebida && <PageHeader titulo={titulo} acciones={acciones} />}
       <Card size="small">
-        <Space wrap style={{ marginBottom: 12 }}>
+        <Space wrap style={{ marginBottom: 12, width: '100%', justifyContent: 'space-between' }}>
+          <Space wrap>
           <Input
             allowClear
             prefix={<SearchOutlined />}
@@ -222,6 +222,8 @@ export default function CrudPage<T extends { id: number }>({
             }}
           />
           {filtrosExtra}
+          </Space>
+          {embebida && <Space wrap>{acciones}</Space>}
         </Space>
         <Table
           rowKey="id"

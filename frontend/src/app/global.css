@@ -273,7 +273,8 @@ body {
   text-align: center;
   border-radius: 10px;
   border: 1px solid #eef0f3;
-  border-top: 5px solid;
+  /* La línea de color del estado va abajo. */
+  border-bottom: 5px solid;
   background: #fff;
   cursor: pointer;
   transition: box-shadow 0.15s, transform 0.15s;
@@ -285,9 +286,17 @@ body {
   transform: translateY(-1px);
   outline: none;
 }
-.tarjeta-agente img {
+.tarjeta-agente .icono-persona {
   margin: 4px 0 6px;
   box-shadow: 0 0 0 3px #fff;
+}
+/* Silueta de persona coloreada según el estado (reemplaza a las fotos). */
+.icono-persona {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 .tarjeta-agente-nombre {
   max-width: 100%;
@@ -477,10 +486,7 @@ body {
   color: #6b7a8c;
 }
 
-/* Saldos de la ficha: subtotales y total */
-.saldo-fila-subtotal td {
-  background: #fafafa;
-}
+/* Saldos de la ficha: total */
 .saldo-fila-total td {
   background: #eef3f8 !important;
   border-top: 2px solid #c9d6e3;
@@ -504,20 +510,47 @@ body {
   height: 12px;
   border-radius: 50%;
 }
+/* Referencia del tinte de los días en el calendario */
+.leyenda-tinte-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #595959;
+}
 .leyenda-tinte-barra {
   display: inline-block;
-  width: 100%;
-  min-width: 90px;
-  height: 22px;
-  margin-top: 6px;
-  border-radius: 6px;
+  width: 90px;
+  height: 14px;
+  border-radius: 4px;
   background: linear-gradient(90deg, rgba(245, 34, 45, 0.05), rgba(245, 34, 45, 0.3));
 }
-.leyenda-tinte-card .ant-statistic-content {
+
+/* Selector de color: paleta predefinida + color libre */
+.selector-color {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
-.leyenda-tinte-card .ant-statistic-content-value {
-  flex: 1;
+.color-muestra {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: transform 0.1s;
+}
+.color-muestra:hover {
+  transform: scale(1.12);
+}
+.color-muestra.elegido {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1f4e79;
 }
 
 /* Patrimonio: cargos cerrados (historial) atenuados */

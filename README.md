@@ -1,4 +1,4 @@
-# Shugo-GEO · Gestión de Empleados y Operatividad
+# SHUGOGEO · Gestión de Empleados y Operatividad
 
 Sistema de gestión y control de personal para la **Dirección General de Informática — Municipalidad de Ushuaia**.
 
@@ -22,7 +22,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements/dev.txt
 # Frontend (en otra terminal)
 cd frontend
 npm install
-npm run dev                                   # http://localhost:5173  (redirige /api y /media/fotos al backend)
+npm run dev                                   # http://localhost:5173  (redirige /api al backend)
 ```
 
 **Mostrar la app a otra PC de la red:** `npm run dev:red` (Vite escucha en `0.0.0.0`) y abrir el puerto en el firewall,
@@ -43,8 +43,8 @@ docker compose exec backend python manage.py createsuperuser
 ```
 
 nginx publica el puerto `HTTP_PORT` (80 por defecto), sirve el frontend y redirige `/api` y `/admin` a Django.
-La documentación respaldatoria y las fotos se guardan en el volumen `media`: nginx sirve públicamente **sólo** `media/fotos/`;
-la documentación **sólo se descarga por la API autenticada**.
+La documentación respaldatoria y las planillas de cargo se guardan en el volumen `media` y **sólo se descargan por la API autenticada**
+(nginx no expone ninguna carpeta de media).
 La base de Docker (PostgreSQL) es independiente de la de desarrollo (SQLite): la primera vez hay que crear el usuario
 (`createsuperuser`) o cargar la demo (`docker compose exec backend python manage.py cargar_demo`).
 Los respaldos automáticos quedaron fuera de esta etapa (el volumen `pgdata` se puede respaldar con `pg_dump`).
@@ -57,17 +57,15 @@ Los respaldos automáticos quedaron fuera de esta etapa (el volumen `pgdata` se 
 |---|---|
 | **Estructura organizativa** | Árbol de **unidades**: Dirección General › Direcciones › Áreas (Configuración › Estructura organizativa). En una instalación nueva sólo existe la Dirección General (con el nombre de `SHUGO_ORGANISMO`): las direcciones y áreas las crea el administrador, y los reinicios del contenedor no las modifican. Cada empleado se asigna a **cualquier unidad**, de cualquier nivel (p. ej. personal de la Dirección General sin área). Filtrar por una unidad incluye a todo el personal de sus dependientes. Para sumar un nivel (Departamento, División) se agrega a `TipoUnidad` en `apps/organizacion/models.py`. |
 | **Situación de revista** | Estado administrativo cargado a mano: Activo / Suspendido / Baja (baja lógica, se conserva el historial). |
-| **Novedad** | Período de un empleado con un tipo (vacaciones, licencia, ausencia, comisión…). Puede quedar **abierta** (sin fecha de fin) si el tipo lo permite. |
+| **Licencia (novedad)** | Período de un empleado con un artículo de licencia (vacaciones, licencia médica, ausencia…). Puede quedar **abierta** (sin fecha de fin) si el artículo lo permite. |
 | **Estado del día** | **No se guarda: se calcula** a partir de las novedades vigentes en la fecha. Sin novedades = Activo. Si hay varias superpuestas se muestran todas. |
-| **Tipo de novedad** | Configurable: categoría, color, cómputo (días hábiles/corridos), si descuenta saldo, si requiere documentación, si puede quedar abierta. |
-| **Categoría de estado** | Agrupa tipos en las tarjetas del dashboard. `cuenta_como_presente` hace que el agente sume en "Trabajando" (p. ej. Comisión). |
-| **Saldo** | Libro de movimientos por empleado y tipo: asignaciones (manuales o masivas) + compensaciones por día no laborable trabajado ± ajustes − días de licencias registradas. **Es acumulable** entre años. Los días se descuentan **al registrar** la licencia (utilizados si ya empezó, programados si es futura). Sólo descuentan los tipos con "Descuenta saldo". Un tipo puede **usar el saldo de otro** (Licencia invernal → Licencia vacaciones): sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella; el saldo muestra el desglose por tipo. Cada bolsa se puede **ocultar** ("Mostrar saldo") cuando ya no se usa; la ficha muestra una tabla con subtotal por categoría y **total general**. "Ver uso" (Configuración › Tipos) lista quién tiene días o licencias de un tipo; las licencias anuladas no impiden eliminarlo (se borran con él). En la ficha, "Elegir visibles" define por empleado qué bolsas se muestran y suman al total. "Acreditar a todos" (y la propuesta al crear un tipo con saldo) hace la carga masiva de días. |
+| **Artículo de licencia** | Configurable (Configuración › Artículos de licencia): **color** (con el que se ve el agente en el Inicio y el calendario), cómputo (días hábiles/corridos), si descuenta saldo, si requiere documentación, si puede quedar abierta. En el código es el modelo `TipoNovedad`. Un agente está **trabajando** si no tiene ninguna licencia vigente. |
+| **Saldo** | Libro de movimientos por empleado y tipo: asignaciones (manuales o masivas) + compensaciones por día no laborable trabajado ± ajustes − días de licencias registradas. **Es acumulable** entre años. Los días se descuentan **al registrar** la licencia (utilizados si ya empezó, programados si es futura). Sólo descuentan los tipos con "Descuenta saldo". Un tipo puede **usar el saldo de otro** (Licencia invernal → Licencia vacaciones): sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella; el saldo muestra el desglose por tipo. Cada bolsa se puede **ocultar** ("Mostrar saldo") cuando ya no se usa; la ficha muestra una fila por bolsa y el **total general**. "Ver uso" (Configuración › Artículos de licencia) lista quién tiene días o licencias de un artículo; las licencias anuladas no impiden eliminarlo (se borran con él). En la ficha, "Elegir visibles" define por empleado qué bolsas se muestran y suman al total. "Acreditar a todos" (y la propuesta al crear un tipo con saldo) hace la carga masiva de días. |
 | **Interrupción** | Acción "Interrumpir" sobre una licencia: se indica el último día tomado, se recalculan los días y **los no tomados vuelven al saldo**. Quedan registrados la fecha de fin prevista, los días originales y el motivo. |
 | **Estado de la licencia** | Se calcula: Programada · En curso · Finalizada · Interrumpida · Anulada. **Sólo se eliminan las programadas o las cargadas hoy** (corrección inmediata de un error). En curso: sólo se extiende la fecha de fin (acortar = Interrumpir). Finalizadas/interrumpidas: sólo motivo, observaciones y documentación. |
-| **Anulación** | Reemplaza al borrado para licencias cargadas por error: motivo obligatorio, se registra quién y cuándo, el registro queda en el historial y **sus días vuelven al saldo**. Las anuladas no cuentan en saldos, dashboard, calendario ni reportes. |
+| **Anulación** | Reemplaza al borrado para licencias cargadas por error: motivo obligatorio, se registra quién y cuándo, el registro queda en el historial y **sus días vuelven al saldo**. Las anuladas no cuentan en saldos, Inicio, calendario ni reportes. |
 | **Día no laborable** | Feriados (carga inicial automática de los nacionales), asuetos y días otorgados por resolución, con motivo y norma. Se descuentan del cómputo de días hábiles y se ven en el calendario. |
 | **Legajo** | Único. Las modalidades con "usa DNI como legajo" (contratos, pasantes) lo completan con el DNI si se deja vacío. |
-| **Foto** | Se carga desde la ficha; el servidor la recorta cuadrada, la reduce a 400 px y la guarda como JPEG con nombre aleatorio. Sin foto se muestra `frontend/public/avatar-placeholder.png`. Sólo la carpeta `media/fotos/` se sirve públicamente (nginx); la documentación respaldatoria nunca. |
 | **Cargo patrimonial** | Bienes a cargo de cada agente: insumo (catálogo configurable), planilla de cargo, IUB, descripción y legajo del responsable al momento de la asignación. IUB y planilla son obligatorios. Se cierran con **Transferir** (a otro empleado: nuevo cargo con el mismo IUB y una planilla nueva y distinta; o a un área ajena a Informática: queda sin agente) o **Dar de baja** (fuera de servicio: el IUB no puede volver a asignarse). Cada cargo guarda sus **archivos** (planilla firmada, actas): se adjuntan al asignar, al transferir (van al cargo nuevo; la planilla anterior queda como referencia en el cerrado) o al dar de baja, y se ven (imágenes y PDF, con el visor integrado) o descargan sólo por la API autenticada. Todo queda en el historial y buscar por IUB muestra la trayectoria del bien. Un IUB no puede estar a cargo de dos personas y no se puede dar de baja a un agente con bienes a cargo. |
 
 ---
@@ -81,20 +79,21 @@ Shugo-GEO/
 │   └── apps/
 │       ├── core/               modelos base, permisos, paginación, fechas, comandos inicializar/cargar_demo
 │       ├── accounts/           usuario, roles (grupos Django), JWT, /auth/me
-│       ├── organizacion/       estructura organizativa (árbol de unidades), puestos, modalidades
+│       ├── organizacion/       estructura organizativa (árbol de unidades), modalidades
 │       ├── personal/           empleados, ficha, filtros comunes (selectors.py)
 │       ├── calendario/         feriados/asuetos, cómputo de días hábiles, eventos del calendario
-│       ├── novedades/          categorías, tipos, novedades, documentación respaldatoria
+│       ├── novedades/          artículos de licencia, licencias, documentación respaldatoria
 │       ├── vacaciones/         movimientos de saldo, cálculo de saldos, asignación masiva
 │       ├── patrimonio/         cargo patrimonial: tipos de insumo, bienes a cargo, bajas y transferencias
-│       ├── dashboard/          estado del personal (resumen + tabla) y grilla por período
+│       ├── servicios/          líneas móviles e internet, con proveedores, tipos de SIM y estados de línea
+│       ├── dashboard/          Inicio: estado del personal (resumen + tabla) y grilla por período
 │       └── reportes/           registro de reportes + exportación genérica Excel/PDF
 └── frontend/src/
     ├── app/                    App, providers, router (generado desde los módulos), tema
     ├── core/                   infraestructura sin lógica de negocio: cliente API, auth, layout, CrudPage, hooks
     ├── shared/                 API de entidades y componentes de dominio reutilizables (selects, formularios)
     └── modules/                una carpeta por funcionalidad, cada una exporta un AppModule
-        ├── dashboard/ personal/ novedades/ vacaciones/ calendario/ patrimonio/ reportes/ configuracion/
+        ├── dashboard/ (Inicio, incluye el calendario) personal/ novedades/ vacaciones/ patrimonio/ servicios/ reportes/ configuracion/
         ├── types.ts            contrato AppModule (menú + rutas + permisos)
         └── index.ts            registro de módulos
 ```
@@ -153,11 +152,11 @@ y el nombre del organismo/municipio con `SHUGO_ORGANISMO` / `SHUGO_MUNICIPIO` (s
 | Punto del requerimiento | Dónde |
 |---|---|
 | A. Registro de personal (ficha, modalidad configurable) | Personal · Configuración › Modalidades |
-| B. Gestión de vacaciones (días, período, usados, disponibles, historial, calendario, cálculo automático) | Vacaciones y saldos · Ficha · Calendario |
-| C. Ausencias y licencias (tipo, motivo, período, observaciones, documentación, tipos configurables) | Licencias y ausencias · Configuración › Tipos |
-| 7. Dashboard (totales por estado, estado por empleado con desde/hasta, filtros por unidad, modalidad, estado, período y empleado) | Dashboard: tarjetas por dirección (color según estado), tabla y grilla por período |
+| B. Gestión de vacaciones (días, período, usados, disponibles, historial, calendario, cálculo automático) | Estado de licencias · Ficha · Inicio › Calendario |
+| C. Ausencias y licencias (tipo, motivo, período, observaciones, documentación, tipos configurables) | Licencias del personal · Configuración › Artículos de licencia |
+| 7. Dashboard (totales por estado, estado por empleado con desde/hasta, filtros por unidad, modalidad, estado, período y empleado) | Inicio: tarjetas por dirección (ícono y línea con el color del estado), tabla, vista por período y calendario |
 | 8. Ficha individual (datos, situación actual, historial) | Personal › ficha |
-| 9. Calendario general | Calendario: vista Mes (nombre de quienes faltan cada día con el color de su licencia, tinte según % de ausentes, detalle por día), Cronograma (agente × día) y Lista. Las novedades abiertas no se proyectan después de hoy. |
+| 9. Calendario general | Inicio › Calendario: vista Mes (nombre de quienes faltan cada día con el color de su licencia, tinte según % de ausentes, detalle por día) y Lista; el cronograma agente × día es la Vista por período. Las novedades abiertas no se proyectan después de hoy. |
 | 10. Roles y permisos | Administrador / Consulta (extensible) |
 | 11. Reportes Excel/PDF (nómina, activos, ausentes en fecha, vacaciones por período, licencias, historial, por área, por modalidad, saldos) | Reportes |
 | 12. Historial de modificaciones, búsquedas, filtros, seguridad | django-simple-history, filtros en todas las pantallas, JWT + permisos |
@@ -167,10 +166,10 @@ y el nombre del organismo/municipio con `SHUGO_ORGANISMO` / `SHUGO_MUNICIPIO` (s
 | Funcionalidad | Dónde |
 |---|---|
 | Estructura en árbol (Dirección General › Direcciones › Áreas) | Configuración › Estructura organizativa |
-| Fotos de los agentes | Ficha (clic sobre la foto) · Dashboard |
-| Bolsas de saldo compartidas, ocultar bolsas, elegir visibles por empleado, acreditación masiva | Configuración › Tipos · Ficha › Saldos · Vacaciones y saldos |
-| Interrupción, anulación e historial de licencias | Licencias y ausencias · Ficha |
-| Cargo patrimonial (insumos, planillas, IUB, transferencias, bajas) | Patrimonio · Ficha › Bienes a cargo · Reporte "Cargos patrimoniales" |
+| Bolsas de saldo compartidas, ocultar bolsas, elegir visibles por empleado, acreditación masiva | Configuración › Artículos de licencia · Ficha › Saldos · Estado de licencias |
+| Interrupción, anulación e historial de licencias | Licencias del personal · Ficha |
+| Cargo patrimonial (insumos, planillas, IUB, transferencias, bajas) | Cargos patrimoniales · Ficha › Bienes a cargo · Reporte "Cargos patrimoniales" |
+| Servicios contratados: líneas móviles (número, SIM, proveedor, estado, responsable, área, secretaría) e internet (sitio, dirección, proveedor, cliente, FSAN, velocidad, IP pública) | Servicios · Configuración › Categoría de servicios |
 
 ---
 

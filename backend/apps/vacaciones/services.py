@@ -29,7 +29,7 @@ def bolsas_de_saldo(tipos=None, incluir_ocultas: bool = True) -> list[TipoNoveda
         bolsas = list({t.tipo_saldo.id: t.tipo_saldo for t in tipos if t.descuenta_saldo or t.saldo_de_id}.values())
     else:
         bolsas = list(
-            TipoNovedad.objects.select_related("categoria").filter(descuenta_saldo=True, saldo_de__isnull=True)
+            TipoNovedad.objects.filter(descuenta_saldo=True, saldo_de__isnull=True)
         )
     return bolsas if incluir_ocultas else [b for b in bolsas if b.mostrar_saldo]
 
@@ -38,10 +38,7 @@ def _saldo_vacio(bolsa: TipoNovedad, miembros: list[TipoNovedad]) -> dict:
     return {
         "tipo_id": bolsa.id,
         "tipo": bolsa.nombre,
-        # Para agrupar y totalizar (p. ej. todas las bolsas de vacaciones, de cualquier año).
-        "categoria_id": bolsa.categoria_id,
-        "categoria": bolsa.categoria.nombre,
-        "color": bolsa.color_efectivo,
+        "color": bolsa.color,
         "mostrar": bolsa.mostrar_saldo,
         "con_movimientos": False,
         # Otros tipos que comparten esta bolsa (p. ej. Licencia invernal).

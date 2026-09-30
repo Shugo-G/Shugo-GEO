@@ -17,11 +17,10 @@ FILTROS_DISPONIBLES = {
     "unidad": "Unidad organizativa",
     "modalidad": "Modalidad",
     "empleado": "Empleado",
-    "tipo_novedad": "Tipo de novedad",
-    "categoria": "Categoría de estado",
+    "tipo_novedad": "Artículo de licencia",
     "situacion_revista": "Situación de revista",
-    "tipo_saldo": "Tipo de licencia con saldo",
-    "tipo_insumo": "Insumo",
+    "tipo_saldo": "Artículo con saldo",
+    "tipo_insumo": "Categoría de insumo",
     "situacion_cargo": "Situación del cargo",
 }
 

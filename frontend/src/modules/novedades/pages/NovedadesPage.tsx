@@ -13,10 +13,10 @@ import AnularNovedadModal from '@/shared/components/AnularNovedadModal';
 import EstadoNovedadTag from '@/shared/components/EstadoNovedadTag';
 import InterrumpirNovedadModal from '@/shared/components/InterrumpirNovedadModal';
 import NovedadFormModal from '@/shared/components/NovedadFormModal';
-import { CategoriaSelect, EmpleadoSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
+import { EmpleadoSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
 import CerrarNovedadModal from '../components/CerrarNovedadModal';
 
-const FILTROS = ['q', 'desde', 'hasta', 'tipo', 'categoria', 'unidad', 'empleado', 'situacion', 'page', 'ordering'] as const;
+const FILTROS = ['q', 'desde', 'hasta', 'tipo', 'unidad', 'empleado', 'situacion', 'page', 'ordering'] as const;
 
 /** Por defecto se muestran las activas (programadas y en curso); el resto está en el historial. */
 const SITUACIONES = [
@@ -40,7 +40,6 @@ export default function NovedadesPage() {
     desde: filtros.desde,
     hasta: filtros.hasta,
     tipo: filtros.tipo,
-    categoria: filtros.categoria,
     unidad: filtros.unidad,
     empleado: filtros.empleado,
     situacion: situacion === 'activas' || situacion === 'historial' ? situacion : undefined,
@@ -66,7 +65,7 @@ export default function NovedadesPage() {
         </>
       ),
     },
-    { title: 'Tipo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
+    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
     { title: 'Desde', dataIndex: 'fecha_desde', key: 'fecha_desde', sorter: true, defaultSortOrder: 'descend', render: fmtFecha, width: 110 },
     {
       title: 'Hasta',
@@ -112,12 +111,11 @@ export default function NovedadesPage() {
   return (
     <>
       <PageHeader
-        titulo="Vacaciones, licencias y ausencias"
-        subtitulo="Licencias activas por defecto; las finalizadas, interrumpidas y anuladas están en el historial"
+        titulo="Licencias del personal"
         acciones={
           <Can permiso="novedades.add_novedad">
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setModal({ abierto: true })}>
-              Registrar novedad
+              Registrar licencia
             </Button>
           </Can>
         }
@@ -145,9 +143,6 @@ export default function NovedadesPage() {
           </Col>
           <Col flex="200px">
             <TipoNovedadSelect mode="multiple" style={{ width: '100%' }} soloActivos={false} value={lista('tipo').map(Number)} onChange={(v) => setFiltros({ tipo: v, page: undefined })} />
-          </Col>
-          <Col flex="200px">
-            <CategoriaSelect mode="multiple" style={{ width: '100%' }} value={lista('categoria').map(Number)} onChange={(v) => setFiltros({ categoria: v, page: undefined })} />
           </Col>
           <Col flex="260px">
             <UnidadSelect

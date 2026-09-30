@@ -51,6 +51,7 @@ LOCAL_APPS = [
     "apps.vacaciones",
     "apps.dashboard",
     "apps.patrimonio",
+    "apps.servicios",
     "apps.reportes",
 ]
 
@@ -157,7 +158,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Shugo-GEO API",
+    "TITLE": "SHUGOGEO API",
     "DESCRIPTION": "Gestión de Empleados y Operatividad",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
@@ -170,7 +171,7 @@ CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 # Parámetros propios del sistema
 # ---------------------------------------------------------------------------
 SHUGO = {
-    "NOMBRE_SISTEMA": "Shugo-GEO",
+    "NOMBRE_SISTEMA": "SHUGOGEO",
     "DESCRIPCION_SISTEMA": "Gestión de Empleados y Operatividad",
     "ORGANISMO": env("SHUGO_ORGANISMO", default="Dirección General de Informática"),
     "MUNICIPIO": env("SHUGO_MUNICIPIO", default="Municipalidad de Ushuaia"),

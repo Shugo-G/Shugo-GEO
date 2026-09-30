@@ -5,7 +5,7 @@ import { erroresDeCampos, mensajeError } from '@/core/api/client';
 import { FORMATO_FECHA, aApi, deApi } from '@/core/utils/format';
 import { modalidadesApi } from '@/shared/api/catalogos';
 import { SITUACIONES, empleadosApi, type Empleado, type SituacionRevista } from '@/shared/api/empleados';
-import { ModalidadSelect, PuestoSelect, UnidadSelect } from '@/shared/components/Selects';
+import { ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
 
 interface Props {
   open: boolean;
@@ -128,7 +128,7 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
               <Input />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={12}>
+          <Col xs={24}>
             <Form.Item
               name="unidad"
               label="Unidad organizativa"
@@ -136,11 +136,6 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
               extra="Dirección General, Dirección o Área."
             >
               <UnidadSelect />
-            </Form.Item>
-          </Col>
-          <Col xs={24} sm={12}>
-            <Form.Item name="puesto" label="Puesto / función">
-              <PuestoSelect />
             </Form.Item>
           </Col>
           <Col xs={24} sm={8}>

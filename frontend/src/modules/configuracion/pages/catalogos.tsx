@@ -3,7 +3,7 @@
  * CrudPage: para agregar un catálogo nuevo alcanza con declarar sus campos
  * y registrar la ruta en ../index.tsx.
  */
-import { App, Badge, Button, InputNumber, Popover, Select, Space, Tag, Tooltip } from 'antd';
+import { App, Badge, Button, InputNumber, Popover, Select, Space, Tabs, Tag, Tooltip } from 'antd';
 import { CloudDownloadOutlined, FileSearchOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -12,18 +12,11 @@ import { api, mensajeError } from '@/core/api/client';
 import type { Catalogo, DiaNoLaborable, Opcion } from '@/core/api/types';
 import { Can } from '@/core/auth/guards';
 import CrudPage, { type CampoCrud } from '@/core/components/CrudPage';
-import {
-  categoriasApi,
-  modalidadesApi,
-  noLaborablesApi,
-  puestosApi,
-  tiposNovedadApi,
-  type CategoriaEstado,
-  type Modalidad,
-  type TipoNovedad,
-} from '@/shared/api/catalogos';
+import PageHeader from '@/core/components/PageHeader';
+import { modalidadesApi, noLaborablesApi, tiposNovedadApi, type Modalidad, type TipoNovedad } from '@/shared/api/catalogos';
 import { insumosApi } from '@/shared/api/patrimonio';
-import { CategoriaSelect, TipoNovedadSelect } from '@/shared/components/Selects';
+import { estadosLineaApi, proveedoresApi, tiposSimApi } from '@/shared/api/servicios';
+import { TipoNovedadSelect } from '@/shared/components/Selects';
 import AsignacionMasivaModal from '@/shared/components/AsignacionMasivaModal';
 import UsoTipoModal from '../components/UsoTipoModal';
 
@@ -41,22 +34,10 @@ function camposFinales<T extends Catalogo>(): CampoCrud<T>[] {
   ];
 }
 
-export function PuestosPage() {
-  return (
-    <CrudPage<Catalogo>
-      titulo="Puestos / funciones"
-      recurso={puestosApi}
-      permiso="organizacion.puesto"
-      campos={[...camposBase(), ...camposFinales()]}
-    />
-  );
-}
-
 export function TiposInsumoPage() {
   return (
     <CrudPage<Catalogo>
-      titulo="Tipos de insumo"
-      subtitulo="Bienes que pueden asignarse como cargo patrimonial (CPU, Monitor, Notebook...)"
+      titulo="Categoría de insumos"
       recurso={insumosApi}
       permiso="patrimonio.tipoinsumo"
       campos={[...camposBase(), ...camposFinales()]}
@@ -68,7 +49,6 @@ export function ModalidadesPage() {
   return (
     <CrudPage<Modalidad>
       titulo="Modalidades de contratación"
-      subtitulo="Planta permanente, contratos, pasantías y cualquier otra modalidad"
       recurso={modalidadesApi}
       permiso="organizacion.modalidadcontratacion"
       campos={[
@@ -82,36 +62,6 @@ export function ModalidadesPage() {
         },
         { nombre: 'requiere_fecha_fin', etiqueta: 'Requiere fin de contrato', tipo: 'switch', valorInicial: false },
         ...camposFinales<Modalidad>(),
-      ]}
-    />
-  );
-}
-
-export function CategoriasPage() {
-  return (
-    <CrudPage<CategoriaEstado>
-      titulo="Categorías de estado"
-      subtitulo="Agrupan los tipos de novedad en las tarjetas del dashboard"
-      recurso={categoriasApi}
-      permiso="novedades.categoriaestado"
-      campos={[
-        {
-          nombre: 'nombre',
-          etiqueta: 'Nombre',
-          tipo: 'texto',
-          requerido: true,
-          renderTabla: (v, fila) => <Badge color={fila.color} text={String(v)} />,
-        },
-        { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
-        { nombre: 'color', etiqueta: 'Color', tipo: 'color', valorInicial: '#8c8c8c', requerido: true },
-        {
-          nombre: 'cuenta_como_presente',
-          etiqueta: 'Cuenta como presente',
-          tipo: 'switch',
-          valorInicial: false,
-          ayuda: 'El agente se considera trabajando (p. ej. comisión de servicio).',
-        },
-        ...camposFinales<CategoriaEstado>(),
       ]}
     />
   );
@@ -146,19 +96,18 @@ export function TiposNovedadPage() {
         </>
       )}
       onGuardado={(fila, creado) => {
-        // Al crear un tipo con saldo (p. ej. "Licencia invierno 2027") se ofrece acreditar días a todos.
+        // Al crear un artículo con saldo (p. ej. "Licencia invierno 2027") se ofrece acreditar días a todos.
         if (creado && fila.descuenta_saldo) {
           modal.confirm({
             title: `¿Acreditar días de "${fila.nombre}" a los empleados?`,
-            content: 'Puede asignar ahora la misma cantidad de días a todo el personal activo (o a algunas unidades). También puede hacerlo más tarde desde esta lista o desde Vacaciones y saldos.',
+            content: 'Puede asignar ahora la misma cantidad de días a todo el personal activo (o a algunas unidades). También puede hacerlo más tarde desde esta lista o desde Estado de licencias.',
             okText: 'Acreditar ahora',
             cancelText: 'Más tarde',
             onOk: () => setAcreditar(fila),
           });
         }
       }}
-      titulo="Tipos de licencias y ausencias"
-      subtitulo="Licencia vacaciones, invernal, médica, ausencias... configurables por el administrador"
+      titulo="Artículos de licencia"
       recurso={tiposNovedadApi}
       permiso="novedades.tiponovedad"
       anchoModal={640}
@@ -168,18 +117,18 @@ export function TiposNovedadPage() {
           etiqueta: 'Nombre',
           tipo: 'texto',
           requerido: true,
-          renderTabla: (v, fila) => <Badge color={fila.color_efectivo} text={String(v)} />,
+          renderTabla: (v, fila) => <Badge color={fila.color} text={String(v)} />,
         },
         { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
         {
-          nombre: 'categoria',
-          etiqueta: 'Categoría (dashboard)',
-          tipo: 'select',
+          nombre: 'color',
+          etiqueta: 'Color',
+          tipo: 'color',
           requerido: true,
-          componente: <CategoriaSelect />,
-          renderTabla: (_, fila) => fila.categoria_nombre,
+          valorInicial: '#1677ff',
+          ayuda: 'Con este color se muestra el agente en el Inicio y en el calendario.',
+          enTabla: false,
         },
-        { nombre: 'color', etiqueta: 'Color propio', tipo: 'color', ayuda: 'Opcional. Si no se indica se usa el de la categoría.', enTabla: false },
         { nombre: 'computo_dias', etiqueta: 'Cómputo de días', tipo: 'select', opciones: COMPUTOS, valorInicial: 'HABILES', requerido: true },
         {
           nombre: 'descuenta_saldo',
@@ -193,7 +142,7 @@ export function TiposNovedadPage() {
           etiqueta: 'Usa el saldo de',
           tipo: 'select',
           componente: <TipoNovedadSelect soloConSaldo placeholder="Saldo propio" />,
-          ayuda: 'Comparte la bolsa de días de otro tipo: sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella (p. ej. Licencia invernal → Licencia vacaciones).',
+          ayuda: 'Comparte la bolsa de días de otro artículo: sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella (p. ej. Licencia invernal → Licencia vacaciones).',
           renderTabla: (_, fila) => fila.saldo_de_nombre ?? (fila.descuenta_saldo ? 'Propio' : '—'),
         },
         {
@@ -268,8 +217,7 @@ export function NoLaborablesPage() {
 
   return (
     <CrudPage<DiaNoLaborable>
-      titulo="Feriados y días no laborables"
-      subtitulo="Feriados, asuetos y días otorgados por resolución. Se muestran en el calendario y se descuentan del cómputo de días hábiles."
+      titulo="Días no laborables"
       recurso={noLaborablesApi}
       permiso="calendario.dianolaborable"
       params={{ anio, ordering: 'fecha' }}
@@ -298,5 +246,24 @@ export function NoLaborablesPage() {
         { nombre: 'observaciones', etiqueta: 'Observaciones', tipo: 'textarea' },
       ]}
     />
+  );
+}
+
+/** Catálogos del módulo Servicios: proveedores, tipos de SIM y estados de línea. */
+export function CategoriaServiciosPage() {
+  const catalogo = (titulo: string, recurso: typeof proveedoresApi, permiso: string) => (
+    <CrudPage<Catalogo> embebida titulo={titulo} recurso={recurso} permiso={permiso} campos={[...camposBase(), ...camposFinales()]} />
+  );
+  return (
+    <>
+      <PageHeader titulo="Categoría de servicios" />
+      <Tabs
+        items={[
+          { key: 'proveedores', label: 'Proveedores', children: catalogo('Proveedor', proveedoresApi, 'servicios.proveedor') },
+          { key: 'sim', label: 'SIM', children: catalogo('Tipo de SIM', tiposSimApi, 'servicios.tiposim') },
+          { key: 'estados', label: 'Estados de línea', children: catalogo('Estado de línea', estadosLineaApi, 'servicios.estadolinea') },
+        ]}
+      />
+    </>
   );
 }

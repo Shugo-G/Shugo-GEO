@@ -16,7 +16,7 @@ from apps.calendario.services import contar_dias
 from apps.core.fechas import hoy
 from apps.novedades.models import Novedad, TipoNovedad
 from apps.organizacion import seeds as seeds_organizacion
-from apps.organizacion.models import ModalidadContratacion, Puesto, TipoUnidad, UnidadOrganizativa
+from apps.organizacion.models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
 from apps.personal.models import Empleado
 from apps.vacaciones.models import ConceptoMovimiento, MovimientoSaldo
 
@@ -27,7 +27,6 @@ AREAS = {
     "Redes e infraestructura": "Dirección de Infraestructura",
     "Administración": "Dirección de Infraestructura",
 }
-PUESTOS = ["Director/a", "Jefe/a de área", "Técnico/a de soporte", "Desarrollador/a", "Administrador/a de redes", "Administrativo/a"]
 NOMBRES = ["Lucía", "Martín", "Sofía", "Juan", "Valentina", "Diego", "Camila", "Nicolás", "Florencia", "Matías",
            "Agustina", "Federico", "Julieta", "Pablo", "Micaela", "Santiago", "Carolina", "Tomás", "Rocío", "Gonzalo",
            "Paula", "Facundo", "Belén", "Ezequiel"]
@@ -69,7 +68,6 @@ class Command(BaseCommand):
             14: UnidadOrganizativa.objects.get(nombre="Dirección de Desarrollo", padre=direccion_general),
             15: UnidadOrganizativa.objects.get(nombre="Dirección de Infraestructura", padre=direccion_general),
         }
-        puestos = [Puesto.objects.get_or_create(nombre=n, defaults={"orden": i})[0] for i, n in enumerate(PUESTOS)]
         modalidades = list(ModalidadContratacion.objects.all())
 
         empleados = []
@@ -85,7 +83,6 @@ class Command(BaseCommand):
                     legajo=dni if modalidad.usa_dni_como_legajo else str(1000 + i),
                     fecha_nacimiento=fecha_hoy - timedelta(days=rnd.randint(22 * 365, 60 * 365)),
                     unidad=asignacion_directa.get(i, areas[i % len(areas)]),
-                    puesto=rnd.choice(puestos),
                     modalidad=modalidad,
                     fecha_ingreso=ingreso,
                     fecha_fin_contrato=fecha_hoy.replace(month=12, day=31) if modalidad.requiere_fecha_fin else None,
@@ -126,7 +123,7 @@ class Command(BaseCommand):
         novedad(empleados[2], "Licencia vacaciones", -1, 14)
         novedad(empleados[3], "Licencia médica", -2, 5, "Gripe")
         novedad(empleados[4], "Ausencia", 0, None, "Sin aviso")
-        novedad(empleados[5], "Comisión de servicio", -1, 3, "Capacitación en Río Grande")
+        novedad(empleados[5], "Licencia médica", -1, 3, "Control")
         novedad(empleados[6], "Licencia invernal", -4, 7)
         novedad(empleados[7], "Licencia médica", -10, None, "Tratamiento prolongado")
         # Futuras y pasadas

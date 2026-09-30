@@ -9,7 +9,7 @@ from collections import Counter
 
 from apps.core.fechas import hoy, parse_fecha_param
 from apps.dashboard.services import estado_personal
-from apps.novedades.models import CategoriaEstado, Novedad, TipoNovedad
+from apps.novedades.models import Novedad, TipoNovedad
 from apps.organizacion.selectors import Arbol
 from apps.personal.selectors import filtrar_empleados
 from apps.vacaciones.services import bolsas_de_saldo, saldos_por_empleado
@@ -36,7 +36,6 @@ class NominaPersonal(Reporte):
             Columna("nombre", "Apellido y nombre", 28),
             Columna("dni", "DNI", 11),
             Columna("unidad", "Unidad organizativa", 32),
-            Columna("puesto", "Puesto", 18),
             Columna("modalidad", "Modalidad", 18),
             Columna("fecha_ingreso", "Ingreso", 11, "fecha"),
             Columna("fecha_fin_contrato", "Fin contrato", 11, "fecha"),
@@ -54,7 +53,6 @@ class NominaPersonal(Reporte):
                 "nombre": e.nombre_completo,
                 "dni": e.dni,
                 "unidad": arbol.ruta(e.unidad_id),
-                "puesto": e.puesto.nombre if e.puesto else "",
                 "modalidad": e.modalidad.nombre,
                 "fecha_ingreso": e.fecha_ingreso,
                 "fecha_fin_contrato": e.fecha_fin_contrato,
@@ -115,7 +113,7 @@ class EstadoPersonalFecha(_EstadoEnFecha):
 class PersonalTrabajandoFecha(_EstadoEnFecha):
     clave = "activos_fecha"
     titulo = "Personal activo en una fecha"
-    descripcion = "Agentes trabajando en la fecha indicada (incluye comisiones de servicio)."
+    descripcion = "Agentes trabajando (sin licencias vigentes) en la fecha indicada."
     solo_trabajando = True
 
 
@@ -135,15 +133,15 @@ class _ResumenPor(Reporte):
     campo_grupo = ""
     etiqueta_grupo = ""
 
-    def _categorias(self):
-        return list(CategoriaEstado.objects.filter(activo=True))
+    def _articulos(self):
+        return list(TipoNovedad.objects.filter(activo=True))
 
     def columnas(self, params):
         return [
             Columna("grupo", self.etiqueta_grupo, 24),
             Columna("total", "Total", 8, "numero"),
             Columna("trabajando", "Trabajando", 11, "numero"),
-            *[Columna(f"cat_{c.id}", c.nombre, 12, "numero") for c in self._categorias()],
+            *[Columna(f"tipo_{t.id}", t.nombre, 12, "numero") for t in self._articulos()],
         ]
 
     def filas(self, params):
@@ -154,8 +152,8 @@ class _ResumenPor(Reporte):
             contador = grupos.setdefault(emp[self.campo_grupo], Counter())
             contador["total"] += 1
             contador["trabajando"] += emp["trabajando"]
-            for categoria_id in {n["categoria_id"] for n in emp["novedades"]}:
-                contador[f"cat_{categoria_id}"] += 1
+            for tipo_id in {n["tipo_id"] for n in emp["novedades"]}:
+                contador[f"tipo_{tipo_id}"] += 1
         claves = [c.clave for c in self.columnas(params)][1:]
         filas = [{"grupo": nombre, **{k: contador.get(k, 0) for k in claves}} for nombre, contador in sorted(grupos.items())]
         if filas:
@@ -199,12 +197,11 @@ class ResumenPorModalidad(_ResumenPor):
 
 
 class _Novedades(Reporte):
-    grupo = "Vacaciones, licencias y ausencias"
+    grupo = "Licencias del personal"
     permisos = ("personal.view_empleado", "novedades.view_novedad")
     filtros = [
         Filtro("periodo", requerido=True),
         Filtro("tipo_novedad"),
-        Filtro("categoria"),
         Filtro("unidad"),
         Filtro("modalidad"),
         Filtro("empleado"),
@@ -216,7 +213,7 @@ class _Novedades(Reporte):
             Columna("legajo", "Legajo", 10),
             Columna("empleado", "Apellido y nombre", 26),
             Columna("unidad", "Unidad", 22),
-            Columna("tipo", "Tipo", 20),
+            Columna("tipo", "Artículo", 20),
             Columna("desde", "Desde", 11, "fecha"),
             Columna("hasta", "Hasta", 11, "fecha"),
             Columna("dias", "Días", 7, "numero"),
@@ -233,8 +230,6 @@ class _Novedades(Reporte):
         qs = qs.filter(empleado__in=empleados)
         if tipos := ids(params.get("tipo_novedad")):
             qs = qs.filter(tipo_id__in=tipos)
-        if categorias := ids(params.get("categoria")):
-            qs = qs.filter(tipo__categoria_id__in=categorias)
         if self.solo_con_saldo:
             qs = qs.filter(tipo__descuenta_saldo=True)
         return qs
@@ -268,8 +263,8 @@ class VacacionesPorPeriodo(_Novedades):
 @registrar
 class NovedadesPorPeriodo(_Novedades):
     clave = "novedades_periodo"
-    titulo = "Licencias y ausencias por período"
-    descripcion = "Todas las novedades del período, filtrables por tipo, categoría, área, modalidad o empleado."
+    titulo = "Licencias por período"
+    descripcion = "Todas las licencias del período, filtrables por artículo, unidad, modalidad o empleado."
 
 
 @registrar
@@ -283,9 +278,9 @@ class HistorialEmpleado(_Novedades):
 @registrar
 class SaldosVacaciones(Reporte):
     clave = "saldos"
-    titulo = "Saldos de vacaciones"
+    titulo = "Saldos de licencias"
     descripcion = "Días asignados, compensados, utilizados, programados y disponibles por empleado."
-    grupo = "Vacaciones, licencias y ausencias"
+    grupo = "Licencias del personal"
     permisos = ("personal.view_empleado", "vacaciones.view_movimientosaldo")
     filtros = [Filtro("tipo_saldo"), Filtro("unidad"), Filtro("modalidad"), Filtro("empleado")]
 
@@ -333,7 +328,7 @@ class CargosPatrimoniales(Reporte):
     clave = "cargos_patrimoniales"
     titulo = "Cargos patrimoniales"
     descripcion = "Bienes a cargo del personal (o historial de bajas y transferencias), con planilla, IUB y legajo."
-    grupo = "Patrimonio"
+    grupo = "Cargos patrimoniales"
     permisos = ("patrimonio.view_cargopatrimonial",)
     filtros = [Filtro("situacion_cargo", multiple=False), Filtro("tipo_insumo"), Filtro("unidad"), Filtro("empleado")]
 

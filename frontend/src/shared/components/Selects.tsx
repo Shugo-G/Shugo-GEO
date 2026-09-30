@@ -1,15 +1,6 @@
 import { Badge, Select, TreeSelect, Typography, type SelectProps, type TreeSelectProps } from 'antd';
 import type { Catalogo, Params } from '@/core/api/types';
-import {
-  useArbolUnidades,
-  categoriasApi,
-  modalidadesApi,
-  puestosApi,
-  tiposNovedadApi,
-  type CategoriaEstado,
-  type NodoUnidad,
-  type TipoNovedad,
-} from '@/shared/api/catalogos';
+import { useArbolUnidades, modalidadesApi, tiposNovedadApi, type NodoUnidad, type TipoNovedad } from '@/shared/api/catalogos';
 import { empleadosApi } from '@/shared/api/empleados';
 import { insumosApi } from '@/shared/api/patrimonio';
 import { COLOR_ACTIVO } from '@/app/theme';
@@ -83,19 +74,9 @@ export const UnidadSelect = ({
   );
 };
 
-export const InsumoSelect = (props: BaseProps) => <CatalogoSelect recurso={insumosApi} placeholder="Insumo" {...props} />;
-export const PuestoSelect = (props: BaseProps) => <CatalogoSelect recurso={puestosApi} placeholder="Puesto" {...props} />;
+export const InsumoSelect = (props: BaseProps) => <CatalogoSelect recurso={insumosApi} placeholder="Categoría de insumo" {...props} />;
 export const ModalidadSelect = (props: BaseProps) => (
   <CatalogoSelect recurso={modalidadesApi} placeholder="Modalidad" {...props} />
-);
-
-export const CategoriaSelect = (props: BaseProps) => (
-  <CatalogoSelect<CategoriaEstado>
-    recurso={categoriasApi}
-    placeholder="Categoría"
-    renderLabel={(c) => <Badge color={c.color} text={c.nombre} />}
-    {...props}
-  />
 );
 
 export const TipoNovedadSelect = (props: BaseProps & { soloConSaldo?: boolean }) => {
@@ -103,26 +84,25 @@ export const TipoNovedadSelect = (props: BaseProps & { soloConSaldo?: boolean })
   return (
     <CatalogoSelect<TipoNovedad>
       recurso={tiposNovedadApi}
-      placeholder="Tipo de novedad"
+      placeholder="Artículo de licencia"
       params={soloConSaldo ? { descuenta_saldo: true } : undefined}
-      renderLabel={(t) => <Badge color={t.color_efectivo} text={t.nombre} />}
+      renderLabel={(t) => <Badge color={t.color} text={t.nombre} />}
       {...resto}
     />
   );
 };
 
-/** Estado para filtros del dashboard: "Trabajando", "Sin novedades" + categorías. */
+/** Estado para filtros del Inicio: "Trabajando" (sin licencias) + artículos de licencia. */
 export const EstadoSelect = (props: Omit<SelectProps, 'options'>) => {
-  const { data = [] } = categoriasApi.useTodos({ activo: true });
+  const { data = [] } = tiposNovedadApi.useTodos({ activo: true });
   return (
     <Select
       allowClear
       placeholder="Estado"
       maxTagCount="responsive"
       options={[
-        { value: 'trabajando', label: <Badge color={COLOR_ACTIVO} text="Trabajando" /> },
-        { value: 'sin_novedad', label: <Badge color={COLOR_ACTIVO} text="Activo (sin novedades)" /> },
-        ...data.map((c) => ({ value: String(c.id), label: <Badge color={c.color} text={c.nombre} /> })),
+        { value: 'trabajando', label: <Badge color={COLOR_ACTIVO} text="Activo (trabajando)" /> },
+        ...data.map((t) => ({ value: String(t.id), label: <Badge color={t.color} text={t.nombre} /> })),
       ]}
       {...props}
     />

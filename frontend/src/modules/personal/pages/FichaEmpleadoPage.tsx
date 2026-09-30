@@ -52,7 +52,7 @@ import { useFicha } from '../api';
 import { cargosApi } from '@/shared/api/patrimonio';
 import BienesEmpleado from '@/shared/components/patrimonio/BienesEmpleado';
 import EmpleadoFormModal from '../components/EmpleadoFormModal';
-import FotoEditable from '../components/FotoEditable';
+import IconoPersona from '@/shared/components/IconoPersona';
 import SaldosEmpleado from '../components/SaldosEmpleado';
 
 export default function FichaEmpleadoPage() {
@@ -95,7 +95,7 @@ export default function FichaEmpleadoPage() {
   const anios = Array.from({ length: 6 }, (_, i) => dayjs().year() + 1 - i);
 
   const columnasNovedades: TableColumnsType<Novedad> = [
-    { title: 'Tipo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
+    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
     { title: 'Desde', dataIndex: 'fecha_desde', render: fmtFecha, width: 110 },
     { title: 'Hasta', dataIndex: 'fecha_hasta', width: 110, render: (v) => (v ? fmtFecha(v) : '—') },
     { title: 'Estado', key: 'estado', width: 150, render: (_, n) => <EstadoNovedadTag novedad={n} /> },
@@ -132,7 +132,7 @@ export default function FichaEmpleadoPage() {
 
   const columnasMovimientos: TableColumnsType<MovimientoSaldo> = [
     { title: 'Fecha', dataIndex: 'fecha', render: fmtFecha, width: 110 },
-    { title: 'Tipo', dataIndex: 'tipo_novedad_nombre' },
+    { title: 'Artículo', dataIndex: 'tipo_novedad_nombre' },
     {
       title: 'Concepto',
       dataIndex: 'concepto',
@@ -194,7 +194,7 @@ export default function FichaEmpleadoPage() {
             </Button>
             <Can permiso="novedades.add_novedad">
               <Button icon={<PlusOutlined />} onClick={() => setNovedadModal({ abierto: true })}>
-                Registrar novedad
+                Registrar licencia
               </Button>
             </Can>
             <Can permiso="personal.change_empleado">
@@ -210,7 +210,7 @@ export default function FichaEmpleadoPage() {
         <Col xs={24} xl={14}>
           <Card title="Información personal y laboral" size="small" style={{ height: '100%' }}>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <FotoEditable empleado={empleado} />
+              <IconoPersona color={situacion_actual.novedades[0]?.color ?? COLOR_ACTIVO} tamanio={96} />
               <Descriptions
                 column={{ xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2 }}
                 size="small"
@@ -228,7 +228,6 @@ export default function FichaEmpleadoPage() {
                 {fmtFecha(empleado.fecha_nacimiento)}
                 {empleado.fecha_nacimiento && ` (${dayjs().diff(empleado.fecha_nacimiento, 'year')} años)`}
               </Descriptions.Item>
-              <Descriptions.Item label="Puesto / función">{empleado.puesto_nombre ?? '—'}</Descriptions.Item>
               <Descriptions.Item label="Modalidad">{empleado.modalidad_nombre}</Descriptions.Item>
               <Descriptions.Item label="Ingreso">
                 {fmtFecha(empleado.fecha_ingreso)} ({dayjs().diff(empleado.fecha_ingreso, 'year')} años de antigüedad)
@@ -265,11 +264,11 @@ export default function FichaEmpleadoPage() {
                   {n.motivo && ` · ${n.motivo}`}
                 </Typography.Text>
               ))}
-              {!situacion_actual.novedades.length && <Badge color={COLOR_ACTIVO} text="Sin novedades para hoy" />}
+              {!situacion_actual.novedades.length && <Badge color={COLOR_ACTIVO} text="Sin licencias para hoy" />}
               {proximas.length > 0 && (
                 <>
                   <Typography.Text strong style={{ marginTop: 8 }}>
-                    Próximas novedades
+                    Próximas licencias
                   </Typography.Text>
                   {proximas.map((n) => (
                     <span key={n.id}>
@@ -345,7 +344,7 @@ export default function FichaEmpleadoPage() {
                       pagination={false}
                       dataSource={resumen_historial}
                       columns={[
-                        { title: 'Tipo', dataIndex: 'tipo', render: (t, r) => <Badge color={r.color} text={t} /> },
+                        { title: 'Artículo', dataIndex: 'tipo', render: (t, r) => <Badge color={r.color} text={t} /> },
                         { title: `Registros ${dayjs().year()}`, dataIndex: 'cantidad_anio', align: 'right' },
                         { title: `Días ${dayjs().year()}`, dataIndex: 'dias_anio', align: 'right' },
                         { title: 'Registros totales', dataIndex: 'cantidad', align: 'right' },
@@ -353,7 +352,7 @@ export default function FichaEmpleadoPage() {
                       ]}
                     />
                   ) : (
-                    <Empty description="Sin novedades registradas" />
+                    <Empty description="Sin licencias registradas" />
                   )}
                 </>
               ),

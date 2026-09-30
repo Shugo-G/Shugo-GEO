@@ -74,7 +74,7 @@ export default function MainLayout() {
           <img src="/logo.svg" alt="" width={32} height={32} />
           {!colapsado && (
             <div className="app-logo-texto">
-              <span className="app-logo-nombre">{info?.nombre ?? 'Shugo-GEO'}</span>
+              <span className="app-logo-nombre">{info?.nombre ?? 'SHUGOGEO'}</span>
               <span className="app-logo-desc">Gestión de Empleados y Operatividad</span>
             </div>
           )}

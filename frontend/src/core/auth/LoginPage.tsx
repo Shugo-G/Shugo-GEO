@@ -51,7 +51,7 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <img src="/logo.svg" alt="" width={56} height={56} />
           <Typography.Title level={3} style={{ margin: '12px 0 0' }}>
-            {info?.nombre ?? 'Shugo-GEO'}
+            {info?.nombre ?? 'SHUGOGEO'}
           </Typography.Title>
           <Typography.Text type="secondary">{info?.descripcion ?? 'Gestión de Empleados y Operatividad'}</Typography.Text>
           <div>

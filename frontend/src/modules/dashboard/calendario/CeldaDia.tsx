@@ -1,6 +1,6 @@
 import { Tooltip } from 'antd';
-import type { EventoNovedad } from '../api';
-import type { InfoDia } from '../dias';
+import type { EventoNovedad } from './api';
+import type { InfoDia } from './dias';
 
 const MAX_ETIQUETAS = 5;
 
@@ -9,7 +9,7 @@ interface Props {
   info?: InfoDia;
   total: number;
   esHoy: boolean;
-  ordenCategorias: number[];
+  ordenArticulos: number[];
 }
 
 /** "Fernández, Lucía" → "Fernández, L." */
@@ -23,12 +23,12 @@ function nombreCorto(nombreCompleto: string): string {
  * ausentes y una etiqueta por agente con el color de su licencia. El fondo se
  * tiñe según la proporción de ausentes para anticipar días críticos.
  */
-export default function CeldaDia({ numero, info, total, esHoy, ordenCategorias }: Props) {
+export default function CeldaDia({ numero, info, total, esHoy, ordenArticulos }: Props) {
   const proporcion = info && total ? info.ausentes / total : 0;
   const tinte = info?.laborable && proporcion > 0 ? `rgba(245, 34, 45, ${Math.min(0.03 + proporcion * 0.35, 0.22)})` : undefined;
   const posicion = (n: EventoNovedad) => {
-    const i = ordenCategorias.indexOf(n.categoria_id);
-    return i === -1 ? ordenCategorias.length : i;
+    const i = ordenArticulos.indexOf(n.tipo_id);
+    return i === -1 ? ordenArticulos.length : i;
   };
   const novedades = [...(info?.novedades ?? [])].sort(
     (a, b) => posicion(a) - posicion(b) || a.empleado.localeCompare(b.empleado),

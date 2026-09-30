@@ -1,5 +1,5 @@
 from apps.core.fechas import parse_fecha_param
-from apps.novedades.models import CategoriaEstado, TipoNovedad
+from apps.novedades.models import TipoNovedad
 from apps.organizacion.models import ModalidadContratacion, UnidadOrganizativa
 from apps.personal.models import Empleado, SituacionRevista
 
@@ -47,11 +47,9 @@ def describir_filtros(params, nombres: list[str]) -> str:
     if "empleado" in nombres:
         nombres_de(Empleado, "empleado", "Empleado", "nombre_completo")
     if "tipo_novedad" in nombres:
-        nombres_de(TipoNovedad, "tipo_novedad", "Tipo")
+        nombres_de(TipoNovedad, "tipo_novedad", "Artículo")
     if "tipo_saldo" in nombres:
-        nombres_de(TipoNovedad, "tipo_saldo", "Tipo")
-    if "categoria" in nombres:
-        nombres_de(CategoriaEstado, "categoria", "Categoría")
+        nombres_de(TipoNovedad, "tipo_saldo", "Artículo")
     if "situacion_revista" in nombres and (valores := ids(params.get("situacion_revista"))):
         etiquetas = dict(SituacionRevista.choices)
         partes.append(f"Situación: {', '.join(etiquetas.get(v, v) for v in valores)}")
