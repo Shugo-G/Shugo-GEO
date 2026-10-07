@@ -95,7 +95,7 @@ export default function FichaEmpleadoPage() {
   const anios = Array.from({ length: 6 }, (_, i) => dayjs().year() + 1 - i);
 
   const columnasNovedades: TableColumnsType<Novedad> = [
-    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
+    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={n.anio_saldo ? `${t} · ${n.anio_saldo}` : t} /> },
     { title: 'Desde', dataIndex: 'fecha_desde', render: fmtFecha, width: 110 },
     { title: 'Hasta', dataIndex: 'fecha_hasta', width: 110, render: (v) => (v ? fmtFecha(v) : '—') },
     { title: 'Estado', key: 'estado', width: 150, render: (_, n) => <EstadoNovedadTag novedad={n} /> },

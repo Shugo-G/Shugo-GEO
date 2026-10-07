@@ -55,6 +55,10 @@ export interface TipoNovedad extends Catalogo {
   /** Tipo cuya bolsa de días usa (null = saldo propio). */
   saldo_de: number | null;
   saldo_de_nombre: string | null;
+  /** Bolsa separada por año (sólo en el dueño de la bolsa). */
+  saldo_por_anio: boolean;
+  /** Sus licencias eligen de qué año descuentan (propio o heredado de la bolsa compartida). */
+  saldo_anual: boolean;
   /** Si es false, la bolsa no se muestra en fichas, saldos ni reportes. */
   mostrar_saldo: boolean;
   requiere_documentacion: boolean;

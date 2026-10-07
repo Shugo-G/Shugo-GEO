@@ -53,6 +53,10 @@ export interface SaldoDetalle {
 export interface Saldo {
   tipo_id: number;
   tipo: string;
+  /** Año de la bolsa en artículos con "saldo por año" (null = bolsa única). */
+  anio: number | null;
+  /** Identifica la bolsa: "<tipo_id>" o "<tipo_id>-<año>". */
+  clave: string;
   color: string;
   /** false si el tipo está marcado "no mostrar saldo" (p. ej. licencia de un año ya consumida). */
   mostrar: boolean;

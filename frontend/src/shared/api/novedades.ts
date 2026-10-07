@@ -29,6 +29,8 @@ export interface Novedad {
   fecha_hasta: string | null;
   abierta: boolean;
   dias: number | null;
+  /** Año de la bolsa de la que descuenta (artículos con saldo por año). */
+  anio_saldo: number | null;
   descuenta_saldo: boolean;
   motivo: string;
   observaciones: string;

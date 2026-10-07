@@ -71,7 +71,7 @@ export default function AsignacionMasivaModal({ open, onClose, tipoInicial }: Pr
             </Form.Item>
           </Col>
           <Col xs={12} sm={6}>
-            <Form.Item name="anio" label="Año" rules={[{ required: true }]}>
+            <Form.Item name="anio" label="Año" rules={[{ required: true }]} tooltip="En artículos con saldo por año, los días van a la bolsa de este año.">
               <InputNumber min={2000} max={2100} style={{ width: '100%' }} />
             </Form.Item>
           </Col>

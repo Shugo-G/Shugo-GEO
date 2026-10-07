@@ -10,6 +10,8 @@ from .services import calcular_dias, puede_eliminarse, validar_edicion, validar_
 class TipoNovedadSerializer(CatalogoSerializer):
     computo_dias_display = serializers.CharField(source="get_computo_dias_display", read_only=True)
     saldo_de_nombre = serializers.CharField(source="saldo_de.nombre", read_only=True, default=None)
+    # Si sus licencias eligen año (propio o heredado de la bolsa que comparte).
+    saldo_anual = serializers.BooleanField(read_only=True)
 
     class Meta(CatalogoSerializer.Meta):
         model = TipoNovedad
@@ -20,6 +22,8 @@ class TipoNovedadSerializer(CatalogoSerializer):
             "descuenta_saldo",
             "saldo_de",
             "saldo_de_nombre",
+            "saldo_por_anio",
+            "saldo_anual",
             "mostrar_saldo",
             "requiere_documentacion",
             "permite_sin_fecha_fin",
@@ -30,6 +34,9 @@ class TipoNovedadSerializer(CatalogoSerializer):
             return attrs[campo] if campo in attrs else getattr(self.instance, campo, None)
 
         saldo_de = valor("saldo_de")
+        # "Saldo por año" lo define el dueño de la bolsa; quien comparte saldo lo hereda.
+        if saldo_de is not None or not valor("descuenta_saldo"):
+            attrs["saldo_por_anio"] = False
         if saldo_de is None:
             return attrs
         errores = {}
@@ -44,6 +51,19 @@ class TipoNovedadSerializer(CatalogoSerializer):
         # Compartir saldo implica descontar saldo.
         attrs["descuenta_saldo"] = True
         return attrs
+
+
+    def update(self, instance, validated_data):
+        activa_anual = validated_data.get("saldo_por_anio") and not instance.saldo_por_anio
+        instance = super().update(instance, validated_data)
+        if activa_anual:
+            # Las licencias ya cargadas en la bolsa pasan al año en que empiezan.
+            from django.db.models import F
+
+            Novedad.todas.filter(
+                tipo__in=[instance, *instance.tipos_que_comparten_saldo.all()], anio_saldo__isnull=True
+            ).update(anio_saldo=F("fecha_desde__year"))
+        return instance
 
 
 class DocumentoNovedadSerializer(serializers.ModelSerializer):
@@ -109,6 +129,7 @@ class NovedadSerializer(serializers.ModelSerializer):
             "fecha_hasta",
             "abierta",
             "dias",
+            "anio_saldo",
             "descuenta_saldo",
             "motivo",
             "observaciones",
@@ -176,12 +197,17 @@ class NovedadSerializer(serializers.ModelSerializer):
         if hasta is None:
             attrs["dias"] = None
 
+        # El año del saldo sólo aplica a artículos con bolsa por año.
+        if not tipo.saldo_anual:
+            if valor("anio_saldo") is not None:
+                attrs["anio_saldo"] = None
         errores = validar_novedad(
             empleado=valor("empleado"),
             tipo=tipo,
             desde=desde,
             hasta=hasta,
             dias=attrs.get("dias", valor("dias")),
+            anio_saldo=valor("anio_saldo"),
             instancia=self.instance,
         )
         if errores:

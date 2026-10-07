@@ -68,8 +68,8 @@ class MovimientoSaldoViewSet(AuditedModelViewSet):
 
 class PreferenciaSaldoView(APIView):
     """
-    POST {empleado, tipo, visible}: muestra u oculta una bolsa en la ficha del empleado.
-    `visible: null` vuelve a la regla por defecto.
+    POST {empleado, tipo, anio, visible}: muestra u oculta una bolsa (y año, si es
+    anual) en la ficha del empleado. `visible: null` vuelve a la regla por defecto.
     """
 
     permission_classes = [requiere_permisos("personal.change_empleado")]
@@ -84,8 +84,10 @@ class PreferenciaSaldoView(APIView):
             from rest_framework.exceptions import ValidationError
 
             raise ValidationError({"visible": "Debe ser true, false o null."})
-        guardar_preferencia(empleado, tipo.tipo_saldo, visible)
-        return Response(saldos_por_empleado([empleado.id])[empleado.id][tipo.tipo_saldo.id])
+        bolsa = tipo.tipo_saldo
+        anio = request.data.get("anio") if bolsa.saldo_por_anio else None
+        guardar_preferencia(empleado, bolsa, visible, anio)
+        return Response(saldos_por_empleado([empleado.id])[empleado.id].get((bolsa.id, anio)))
 
 
 class SaldosView(APIView):

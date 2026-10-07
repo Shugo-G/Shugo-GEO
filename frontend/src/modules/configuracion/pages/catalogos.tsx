@@ -146,6 +146,14 @@ export function TiposNovedadPage() {
           renderTabla: (_, fila) => fila.saldo_de_nombre ?? (fila.descuenta_saldo ? 'Propio' : '—'),
         },
         {
+          nombre: 'saldo_por_anio',
+          etiqueta: 'Saldo por año',
+          tipo: 'switch',
+          valorInicial: false,
+          ayuda: 'Cada año tiene su propia bolsa de días: las asignaciones (individuales o masivas) van al año indicado y al registrar una licencia se elige de qué año se descuenta. Los años no vencen. Los artículos que usan el saldo de otro heredan esta opción.',
+          renderTabla: (v, fila) => (fila.saldo_anual ? <Tag color="blue">{v ? 'Por año' : 'Por año (heredado)'}</Tag> : '—'),
+        },
+        {
           nombre: 'mostrar_saldo',
           etiqueta: 'Mostrar saldo',
           tipo: 'switch',

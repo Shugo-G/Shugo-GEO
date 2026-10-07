@@ -36,9 +36,9 @@ export interface FilaSaldos {
   saldos: Saldo[];
 }
 
-/** Muestra u oculta una bolsa en la ficha del agente; `null` vuelve a la regla por defecto. */
-export const guardarPreferenciaSaldo = async (empleado: number, tipo: number, visible: boolean | null) =>
-  (await api.post('/vacaciones/preferencias/', { empleado, tipo, visible })).data;
+/** Muestra u oculta una bolsa (y año, si es anual) en la ficha del agente; `null` vuelve a la regla por defecto. */
+export const guardarPreferenciaSaldo = async (empleado: number, tipo: number, anio: number | null, visible: boolean | null) =>
+  (await api.post('/vacaciones/preferencias/', { empleado, tipo, anio, visible })).data;
 
 export const movimientosApi = crearRecurso<MovimientoSaldo>('vacaciones/movimientos');
 

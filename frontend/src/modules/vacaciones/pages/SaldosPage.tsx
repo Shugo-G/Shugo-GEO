@@ -53,7 +53,7 @@ export default function SaldosPage() {
   const filasSaldo = (saldos?.resultados ?? []).flatMap((f) =>
     f.saldos
       .filter((s) => verTodas || s.visible)
-      .map((s) => ({ ...s, fila: f, key: `${f.empleado_id}-${s.tipo_id}` })),
+      .map((s) => ({ ...s, fila: f, key: `${f.empleado_id}-${s.clave}` })),
   );
   const mostrarBolsa = (saldos?.tipos.length ?? 0) > 1 || filasSaldo.some((f) => f.incluye.length > 0);
 

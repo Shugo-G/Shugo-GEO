@@ -132,10 +132,10 @@ class BolsasVisiblesYUsoTests(TestCase):
         from .services import saldos_por_empleado
 
         saldos = saldos_por_empleado([self.empleado.id, self.otro.id])
-        s = saldos[self.empleado.id][self.lic2025.id]
+        s = saldos[self.empleado.id][(self.lic2025.id, None)]
         self.assertEqual((s["color"], s["con_movimientos"], s["mostrar"]), ("#faad14", True, True))
         self.assertNotIn("categoria", s)
-        self.assertFalse(saldos[self.otro.id][self.lic2025.id]["con_movimientos"])
+        self.assertFalse(saldos[self.otro.id][(self.lic2025.id, None)]["con_movimientos"])
 
     def test_bolsa_oculta_no_aparece_en_saldos_ni_reporte(self):
         self.lic2025.mostrar_saldo = False
@@ -210,3 +210,87 @@ class PreferenciasYEliminacionTests(TestCase):
         self.assertEqual((uso["bloquea_eliminacion"], uso["anuladas"]), (False, 1))
         self.assertEqual(self.api.delete(f"/api/novedades/tipos/{self.lic2027.id}/").status_code, 204)
         self.assertFalse(Novedad.todas.filter(pk=n.pk).exists())
+
+
+class SaldoPorAnioTests(TestCase):
+    """Artículos con "saldo por año": una bolsa independiente por año asignado."""
+
+    def setUp(self):
+        from apps.novedades.models import TipoNovedad
+
+        self.d = datos_base()
+        self.api = cliente()
+        self.empleado = crear_empleado(self.d["area"], self.d["planta"])
+        self.invierno = TipoNovedad.objects.create(nombre="Licencia invierno", descuenta_saldo=True, saldo_por_anio=True)
+        for anio, dias in ((2026, 10), (2027, 7)):
+            r = self.api.post(
+                "/api/vacaciones/movimientos/asignacion-masiva/",
+                {"tipo_novedad": self.invierno.id, "anio": anio, "dias": dias},
+                format="json",
+            )
+            self.assertEqual(r.status_code, 200, r.data)
+
+    def saldos(self):
+        datos = self.api.get(f"/api/personal/empleados/{self.empleado.id}/ficha/").data["saldos"]
+        return {s["anio"]: s for s in datos if s["tipo_id"] == self.invierno.id}
+
+    def registrar(self, anio=None, desde="2026-07-13", hasta="2026-07-17"):
+        datos = {"empleado": self.empleado.id, "tipo": self.invierno.id, "fecha_desde": desde, "fecha_hasta": hasta}
+        if anio:
+            datos["anio_saldo"] = anio
+        return self.api.post("/api/novedades/", datos, format="json")
+
+    def test_cada_anio_tiene_su_bolsa(self):
+        saldos = self.saldos()
+        self.assertEqual({a: s["disponible"] for a, s in saldos.items()}, {2026: 10, 2027: 7})
+        self.assertEqual(saldos[2027]["clave"], f"{self.invierno.id}-2027")
+
+    def test_la_licencia_descuenta_del_anio_elegido(self):
+        r = self.registrar()
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("anio_saldo", r.data)
+        r = self.registrar(2027)
+        self.assertEqual(r.status_code, 201, r.data)
+        saldos = self.saldos()
+        self.assertEqual((saldos[2026]["disponible"], saldos[2027]["disponible"]), (10, 2))
+        # El saldo de un año no alcanza para otro
+        r = self.registrar(2027, desde="2026-08-03", hasta="2026-08-07")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("2027", r.data["dias"][0])
+
+    def test_interrumpir_devuelve_al_mismo_anio(self):
+        novedad = self.registrar(2026).data
+        self.api.post(f"/api/novedades/{novedad['id']}/interrumpir/", {"fecha_hasta": "2026-07-14", "motivo": "x"}, format="json")
+        self.assertEqual(self.saldos()[2026]["disponible"], 8)
+
+    def test_preferencia_de_visibilidad_por_anio(self):
+        r = self.api.post(
+            "/api/vacaciones/preferencias/",
+            {"empleado": self.empleado.id, "tipo": self.invierno.id, "anio": 2026, "visible": False},
+            format="json",
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        saldos = self.saldos()
+        self.assertEqual((saldos[2026]["visible"], saldos[2027]["visible"]), (False, True))
+
+    def test_activar_saldo_por_anio_asigna_el_anio_a_licencias_existentes(self):
+        from apps.novedades.models import Novedad, TipoNovedad
+
+        anual = TipoNovedad.objects.create(nombre="Anual", descuenta_saldo=True)
+        MovimientoSaldo.objects.create(
+            empleado=self.empleado, tipo_novedad=anual, concepto=ConceptoMovimiento.ASIGNACION, anio=2025, dias=20, fecha=date(2025, 1, 1)
+        )
+        novedad = Novedad.objects.create(empleado=self.empleado, tipo=anual, fecha_desde=date(2025, 3, 2), fecha_hasta=date(2025, 3, 6), dias=5)
+        r = self.api.patch(f"/api/novedades/tipos/{anual.id}/", {"saldo_por_anio": True}, format="json")
+        self.assertTrue(r.data["saldo_por_anio"])
+        novedad.refresh_from_db()
+        self.assertEqual(novedad.anio_saldo, 2025)
+
+    def test_quien_comparte_bolsa_hereda_el_saldo_por_anio(self):
+        r = self.api.post(
+            "/api/novedades/tipos/",
+            {"nombre": "Invierno extra", "color": "#1677ff", "saldo_de": self.invierno.id, "saldo_por_anio": True},
+            format="json",
+        )
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual((r.data["saldo_por_anio"], r.data["saldo_anual"]), (False, True))

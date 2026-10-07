@@ -27,12 +27,23 @@ class PreferenciaSaldo(models.Model):
 
     empleado = models.ForeignKey("personal.Empleado", on_delete=models.CASCADE, related_name="preferencias_saldo")
     tipo_novedad = models.ForeignKey("novedades.TipoNovedad", on_delete=models.CASCADE, related_name="+")
+    # Año de la bolsa en artículos con "saldo por año" (null = bolsa única).
+    anio = models.PositiveSmallIntegerField(null=True, blank=True)
     visible = models.BooleanField()
 
     class Meta:
         verbose_name = "preferencia de saldo"
         verbose_name_plural = "preferencias de saldo"
-        constraints = [models.UniqueConstraint(fields=["empleado", "tipo_novedad"], name="preferencia_saldo_unica")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empleado", "tipo_novedad"], condition=models.Q(anio__isnull=True), name="preferencia_saldo_unica"
+            ),
+            models.UniqueConstraint(
+                fields=["empleado", "tipo_novedad", "anio"],
+                condition=models.Q(anio__isnull=False),
+                name="preferencia_saldo_anual_unica",
+            ),
+        ]
 
 
 class MovimientoSaldo(TimeStampedModel):

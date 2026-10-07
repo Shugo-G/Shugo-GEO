@@ -43,7 +43,7 @@ function ElegirVisibles({ empleadoId, saldos }: { empleadoId: number; saldos: Sa
   const qc = useQueryClient();
   const cambiar = async (s: Saldo, visible: boolean | null) => {
     try {
-      await guardarPreferenciaSaldo(empleadoId, s.tipo_id, visible);
+      await guardarPreferenciaSaldo(empleadoId, s.tipo_id, s.anio, visible);
       qc.invalidateQueries();
     } catch (e) {
       message.error(mensajeError(e));
@@ -55,9 +55,9 @@ function ElegirVisibles({ empleadoId, saldos }: { empleadoId: number; saldos: Sa
         Marque las bolsas a mostrar. El total suma sólo las visibles.
       </Typography.Text>
       {saldos.map((s) => (
-        <div key={s.tipo_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div key={s.clave} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <Checkbox checked={s.visible} onChange={(e) => cambiar(s, e.target.checked)}>
-            <Badge color={s.color} text={s.tipo} />{' '}
+            <Badge color={s.color} text={s.anio ? `${s.tipo} · ${s.anio}` : s.tipo} />{' '}
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               ({s.disponible} disp.)
             </Typography.Text>
@@ -83,7 +83,7 @@ export default function SaldosEmpleado({ empleadoId, saldos, onCompensar }: Prop
   const visibles = saldos.filter((s) => s.visible);
   const ocultas = saldos.length - visibles.length;
 
-  const filas: Fila[] = visibles.map((s) => ({ clave: `b${s.tipo_id}`, clase: 'bolsa', saldo: s }));
+  const filas: Fila[] = visibles.map((s) => ({ clave: `b${s.clave}`, clase: 'bolsa', saldo: s }));
   if (visibles.length > 1) filas.push({ clave: 'total', clase: 'total', titulo: 'TOTAL', valores: sumar(visibles) });
 
   const columnas: TableColumnsType<Fila> = [
@@ -93,7 +93,7 @@ export default function SaldosEmpleado({ empleadoId, saldos, onCompensar }: Prop
       render: (_, f) =>
         f.clase === 'bolsa' ? (
           <>
-            <Badge color={f.saldo.color} text={f.saldo.tipo} />
+            <Badge color={f.saldo.color} text={f.saldo.anio ? `${f.saldo.tipo} · ${f.saldo.anio}` : f.saldo.tipo} />
             {f.saldo.incluye.length > 0 && (
               <div>
                 <Typography.Text type="secondary" style={{ fontSize: 12, marginLeft: 14 }}>

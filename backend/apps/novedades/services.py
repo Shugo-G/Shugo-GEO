@@ -17,7 +17,14 @@ def calcular_dias(tipo: TipoNovedad, desde: date, hasta: date | None) -> int | N
 
 
 def validar_novedad(
-    *, empleado, tipo: TipoNovedad, desde: date, hasta: date | None, dias: int | None, instancia: Novedad | None = None
+    *,
+    empleado,
+    tipo: TipoNovedad,
+    desde: date,
+    hasta: date | None,
+    dias: int | None,
+    anio_saldo: int | None = None,
+    instancia: Novedad | None = None,
 ) -> dict[str, str]:
     """Devuelve un dict de errores por campo (vacío si es válida)."""
     from apps.vacaciones.services import calcular_saldo
@@ -30,12 +37,14 @@ def validar_novedad(
     if empleado.fecha_ingreso and desde < empleado.fecha_ingreso:
         errores["fecha_desde"] = "No puede ser anterior a la fecha de ingreso del empleado."
 
+    if tipo.saldo_anual and not anio_saldo:
+        errores["anio_saldo"] = "Indique de qué año se descuentan los días."
     if tipo.descuenta_saldo and not errores and dias:
-        saldo = calcular_saldo(empleado, tipo, excluir_novedad=instancia)
+        saldo = calcular_saldo(empleado, tipo, anio_saldo, excluir_novedad=instancia)
         if dias > saldo["disponible"]:
+            de_que = f"{tipo.nombre.lower()} {anio_saldo}" if tipo.saldo_anual else tipo.nombre.lower()
             errores["dias"] = (
-                f"Saldo insuficiente: dispone de {saldo['disponible']} día(s) de {tipo.nombre.lower()} "
-                f"y está registrando {dias}."
+                f"Saldo insuficiente: dispone de {saldo['disponible']} día(s) de {de_que} y está registrando {dias}."
             )
     return errores
 
@@ -117,7 +126,7 @@ def validar_edicion(instancia: Novedad, attrs: dict) -> dict[str, str]:
 
     # En curso
     errores = {}
-    for campo in ("empleado", "tipo", "fecha_desde"):
+    for campo in ("empleado", "tipo", "fecha_desde", "anio_saldo"):
         if campo in cambios:
             errores[campo] = "No puede modificarse en una licencia en curso."
     if "dias" in cambios and "fecha_hasta" not in cambios:

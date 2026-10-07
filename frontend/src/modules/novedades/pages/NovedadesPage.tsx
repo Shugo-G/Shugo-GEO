@@ -65,7 +65,7 @@ export default function NovedadesPage() {
         </>
       ),
     },
-    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={t} /> },
+    { title: 'Artículo', dataIndex: 'tipo_nombre', render: (t, n) => <Badge color={n.color} text={n.anio_saldo ? `${t} · ${n.anio_saldo}` : t} /> },
     { title: 'Desde', dataIndex: 'fecha_desde', key: 'fecha_desde', sorter: true, defaultSortOrder: 'descend', render: fmtFecha, width: 110 },
     {
       title: 'Hasta',

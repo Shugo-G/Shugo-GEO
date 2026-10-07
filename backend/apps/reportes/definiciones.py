@@ -311,7 +311,8 @@ class SaldosVacaciones(Reporte):
             base = {"legajo": e.legajo, "empleado": e.nombre_completo, "unidad": arbol.ruta(e.unidad_id)}
             propias = list(saldos[e.id].values())
             for saldo in propias:
-                filas.append({**base, **{k: saldo[k] for k in numericos}, "tipo": " + ".join([saldo["tipo"], *saldo["incluye"]])})
+                nombre = " + ".join([saldo["tipo"], *saldo["incluye"]]) + (f" · {saldo['anio']}" if saldo["anio"] else "")
+                filas.append({**base, **{k: saldo[k] for k in numericos}, "tipo": nombre})
             if len(propias) > 1:
                 filas.append({**base, **{k: sum(s[k] for s in propias) for k in numericos}, "tipo": "TOTAL"})
         return filas

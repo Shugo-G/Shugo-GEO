@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, App, Button, Col, DatePicker, Divider, Form, Input, InputNumber, Modal, Row, Typography, Upload, type UploadFile } from 'antd';
+import { Alert, App, Button, Col, DatePicker, Divider, Form, Input, InputNumber, Modal, Row, Typography, Select, Upload, type UploadFile } from 'antd';
 import { PaperClipOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import type { Dayjs } from 'dayjs';
@@ -28,6 +28,7 @@ interface Valores {
   fecha_desde: Dayjs;
   fecha_hasta?: Dayjs | null;
   dias?: number | null;
+  anio_saldo?: number | null;
   motivo?: string;
   observaciones?: string;
 }
@@ -51,6 +52,7 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
   const desde = Form.useWatch('fecha_desde', form);
   const hasta = Form.useWatch('fecha_hasta', form);
   const dias = Form.useWatch('dias', form);
+  const anioSaldo = Form.useWatch('anio_saldo', form);
   const tipo = tipos.find((t) => t.id === tipoId);
 
   // Reglas de edición según el estado (las mismas que valida el backend).
@@ -72,6 +74,7 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
             fecha_desde: deApi(novedad.fecha_desde)!,
             fecha_hasta: deApi(novedad.fecha_hasta),
             dias: novedad.dias,
+            anio_saldo: novedad.anio_saldo ?? undefined,
             motivo: novedad.motivo,
             observaciones: novedad.observaciones,
           }
@@ -96,16 +99,25 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
     };
   }, [tipoId, desde, hasta, form]);
 
-  const { data: saldo } = useQuery({
+  // Saldos de la bolsa que usa el artículo: uno solo, o uno por año si tiene "saldo por año".
+  const { data: saldos = [] } = useQuery({
     queryKey: ['vacaciones/saldos', empleado, tipoId],
     queryFn: async () => {
       const { data } = await api.get<{ resultados: { saldos: Saldo[] }[] }>('/vacaciones/saldos/', {
         params: { empleado, tipo: tipoId },
       });
-      return data.resultados[0]?.saldos[0];
+      return data.resultados[0]?.saldos ?? [];
     },
     enabled: open && !!empleado && !!tipo?.descuenta_saldo && puedeVerSaldos,
   });
+  const saldo = tipo?.saldo_anual ? saldos.find((s) => s.anio === anioSaldo) : saldos[0];
+
+  // Al registrar, propone el año más antiguo que todavía tiene días disponibles.
+  useEffect(() => {
+    if (!open || novedad || !tipo?.saldo_anual || anioSaldo || !saldos.length) return;
+    const propuesto = saldos.find((s) => s.disponible > 0) ?? saldos[saldos.length - 1];
+    if (propuesto?.anio) form.setFieldValue('anio_saldo', propuesto.anio);
+  }, [open, novedad, tipo, anioSaldo, saldos, form]);
 
   const onGuardar = async () => {
     const valores = await form.validateFields();
@@ -117,6 +129,7 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
         fecha_desde: aApi(valores.fecha_desde)!,
         fecha_hasta: aApi(valores.fecha_hasta) ?? null,
         dias: valores.dias ?? null,
+        anio_saldo: tipo?.saldo_anual ? valores.anio_saldo ?? null : null,
         motivo: valores.motivo ?? '',
         observaciones: valores.observaciones ?? '',
       });
@@ -151,7 +164,8 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
     const t = tipos.find((x) => x.id === id);
     return t ? t.saldo_de ?? t.id : undefined;
   };
-  const mismaBolsa = !!novedad && bolsaDe(novedad.tipo) === bolsaDe(tipoId);
+  const mismaBolsa =
+    !!novedad && bolsaDe(novedad.tipo) === bolsaDe(tipoId) && (!tipo?.saldo_anual || novedad.anio_saldo === anioSaldo);
   const disponibleTrasCarga = saldo ? saldo.disponible + (mismaBolsa ? novedad?.dias ?? 0 : 0) : undefined;
 
   return (
@@ -234,6 +248,30 @@ export default function NovedadFormModal({ open, onClose, novedad, empleadoId }:
             </Form.Item>
           </Col>
         </Row>
+        {tipo?.saldo_anual && (
+          <Form.Item
+            name="anio_saldo"
+            label="Año del saldo"
+            rules={[{ required: true, message: 'Indique de qué año se descuentan los días' }]}
+            extra="Los días se descuentan de la bolsa de ese año."
+          >
+            <Select
+              disabled={bloqueoBase}
+              placeholder="Año"
+              notFoundContent="El agente no tiene días asignados en este artículo"
+              options={[
+                ...saldos.map((s) => ({
+                  value: s.anio!,
+                  label: `${s.anio} · ${s.disponible + (novedad && novedad.anio_saldo === s.anio && mismaBolsa ? novedad.dias ?? 0 : 0)} día(s) disponibles`,
+                })),
+                // Al editar, el año ya elegido aunque hoy no tenga saldo.
+                ...(novedad?.anio_saldo && !saldos.some((s) => s.anio === novedad.anio_saldo)
+                  ? [{ value: novedad.anio_saldo, label: String(novedad.anio_saldo) }]
+                  : []),
+              ]}
+            />
+          </Form.Item>
+        )}
         {tipo?.descuenta_saldo && saldo && disponibleTrasCarga !== undefined && (
           <Alert
             type={disponibleTrasCarga - (dias ?? 0) < 0 ? 'error' : 'info'}

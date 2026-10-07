@@ -45,6 +45,12 @@ class TipoNovedad(CatalogoBase):
             "Sus acreditaciones suman a esa bolsa y sus licencias descuentan de ella."
         ),
     )
+    saldo_por_anio = models.BooleanField(
+        "saldo por año",
+        default=False,
+        help_text="Cada año tiene su propia bolsa de días: las asignaciones van al año indicado y cada "
+        "licencia elige de qué año descuenta. Los años no vencen.",
+    )
     mostrar_saldo = models.BooleanField(
         "mostrar saldo",
         default=True,
@@ -68,6 +74,11 @@ class TipoNovedad(CatalogoBase):
     def tipo_saldo(self) -> "TipoNovedad":
         """Tipo cuya bolsa de días usa (él mismo si no comparte saldo)."""
         return self.saldo_de or self
+
+    @property
+    def saldo_anual(self) -> bool:
+        """Descuenta de una bolsa separada por año (lo define el dueño de la bolsa)."""
+        return bool((self.descuenta_saldo or self.saldo_de_id) and self.tipo_saldo.saldo_por_anio)
 
 
 class EstadoNovedad(models.TextChoices):
@@ -120,6 +131,12 @@ class Novedad(TimeStampedModel):
     fecha_hasta = models.DateField("hasta", null=True, blank=True, help_text="Vacío = novedad abierta.")
     dias = models.PositiveIntegerField(
         "días", null=True, blank=True, help_text="Se calcula automáticamente según el tipo; puede ajustarse."
+    )
+    anio_saldo = models.PositiveSmallIntegerField(
+        "año del saldo",
+        null=True,
+        blank=True,
+        help_text="Año de la bolsa de la que se descuentan los días (artículos con saldo por año).",
     )
     motivo = models.CharField("motivo", max_length=255, blank=True)
     observaciones = models.TextField("observaciones", blank=True)

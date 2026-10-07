@@ -115,7 +115,7 @@ export default function MovimientoFormModal({ open, onClose, movimiento, emplead
             </Form.Item>
           </Col>
           <Col xs={12} sm={6}>
-            <Form.Item name="anio" label="Año / período" rules={[{ required: true }]}>
+            <Form.Item name="anio" label="Año / período" rules={[{ required: true }]} tooltip="En artículos con saldo por año, los días van a la bolsa de este año.">
               <InputNumber style={{ width: '100%' }} min={2000} max={2100} />
             </Form.Item>
           </Col>
