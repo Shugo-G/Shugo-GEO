@@ -580,3 +580,64 @@ body {
   max-height: 75vh;
   object-fit: contain;
 }
+
+/* ---- Cumpleaños: tarjeta festiva en el Inicio ---- */
+.tarjeta-cumple {
+  position: relative;
+  padding-top: 22px;
+  box-shadow: 0 0 0 2px #faad14;
+}
+.tarjeta-cumple > *:not(.confeti) {
+  position: relative;
+  z-index: 1;
+}
+.confeti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.confeti i {
+  position: absolute;
+  top: -12px;
+  border-radius: 1px;
+  opacity: 0.9;
+  animation-name: confeti-caer;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes confeti-caer {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(260px) rotate(540deg);
+  }
+}
+.con-gorro {
+  position: relative;
+  display: inline-block;
+}
+.gorro {
+  position: absolute;
+  width: 30px;
+  height: 36px;
+  top: -22px;
+  right: -4px;
+  transform: rotate(22deg);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+.tarjeta-cumple-saludo {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #d46b08;
+}
+@media (prefers-reduced-motion: reduce) {
+  .confeti i {
+    animation: none;
+    top: auto;
+  }
+}
+

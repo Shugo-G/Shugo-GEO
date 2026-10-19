@@ -111,7 +111,7 @@ export default function CalendarioMensual({ filtros, mes, onCambiarMes, vista, o
           headerToolbar={{ left: 'prev,next today', center: 'title', right: '' }}
           buttonText={{ today: 'Hoy' }}
           height="auto"
-          firstDay={1}
+          firstDay={0}
           fixedWeekCount={false}
           events={vista === 'lista' ? eventosLista : []}
           noEventsContent="Sin licencias en el mes"

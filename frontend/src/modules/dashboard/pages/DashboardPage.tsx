@@ -24,7 +24,9 @@ import {
   DownloadOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
+  LeftOutlined,
   ReloadOutlined,
+  RightOutlined,
   SearchOutlined,
   TableOutlined,
   UnorderedListOutlined,
@@ -98,10 +100,35 @@ export default function DashboardPage() {
   }, [data, busqueda]);
 
   const esHoy = modo === 'dia' && fecha === hoyApi();
-  const subtitulo =
+  const textoFecha =
     modo === 'dia'
       ? `${esHoy ? 'Hoy, ' : ''}${dayjs(fecha).format('dddd D [de] MMMM [de] YYYY')}`
       : `Período del ${fmtFecha(desde)} al ${fmtFecha(hasta)}`;
+
+  /** Flechas del encabezado: un día por vez, o el período completo hacia atrás/adelante. */
+  const mover = (sentido: -1 | 1) => {
+    if (modo === 'dia') {
+      const nueva = dayjs(fecha).add(sentido, 'day').format('YYYY-MM-DD');
+      setFiltros({ fecha: nueva === hoyApi() ? undefined : nueva });
+    } else {
+      const largo = dayjs(hasta).diff(dayjs(desde), 'day') + 1;
+      setFiltros({
+        desde: dayjs(desde).add(sentido * largo, 'day').format('YYYY-MM-DD'),
+        hasta: dayjs(hasta).add(sentido * largo, 'day').format('YYYY-MM-DD'),
+      });
+    }
+  };
+  const etiqueta = modo === 'dia' ? 'día' : 'período';
+  const flecha = (sentido: -1 | 1) => (
+    <Tooltip title={`${modo === 'dia' ? 'Día' : 'Período'} ${sentido < 0 ? 'anterior' : 'siguiente'}`}>
+      <Button
+        icon={sentido < 0 ? <LeftOutlined /> : <RightOutlined />}
+        onClick={() => mover(sentido)}
+        aria-label={`${etiqueta} ${sentido < 0 ? 'anterior' : 'siguiente'}`}
+      />
+    </Tooltip>
+  );
+  const subtitulo = textoFecha.charAt(0).toUpperCase() + textoFecha.slice(1);
 
   const exportar = (formato: 'xlsx' | 'pdf') => {
     const base = { unidad: filtros.unidad, modalidad: filtros.modalidad, empleado: filtros.empleado, formato };
@@ -170,7 +197,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         titulo="Estado del personal"
-        subtitulo={subtitulo.charAt(0).toUpperCase() + subtitulo.slice(1)}
+        subtitulo={subtitulo}
         acciones={
           <>
             <Tooltip title={dataUpdatedAt ? `Actualizado ${dayjs(dataUpdatedAt).format('HH:mm:ss')} · se actualiza cada minuto` : ''}>
@@ -207,24 +234,30 @@ export default function DashboardPage() {
           <Col>
             {modo === 'dia' ? (
               <Space.Compact>
+                {flecha(-1)}
                 <DatePicker
                   value={dayjs(fecha)}
                   format={FORMATO_FECHA}
                   allowClear={false}
                   onChange={(d) => setFiltros({ fecha: d && d.format('YYYY-MM-DD') !== hoyApi() ? d.format('YYYY-MM-DD') : undefined })}
                 />
+                {flecha(1)}
                 <Button disabled={esHoy} onClick={() => setFiltros({ fecha: undefined })}>
                   Hoy
                 </Button>
               </Space.Compact>
             ) : (
-              <DatePicker.RangePicker
-                value={[dayjs(desde), dayjs(hasta)]}
-                format={FORMATO_FECHA}
-                allowClear={false}
-                presets={PRESETS_PERIODO}
-                onChange={(r) => r?.[0] && r[1] && setFiltros({ desde: r[0].format('YYYY-MM-DD'), hasta: r[1].format('YYYY-MM-DD') })}
-              />
+              <Space.Compact>
+                {flecha(-1)}
+                <DatePicker.RangePicker
+                  value={[dayjs(desde), dayjs(hasta)]}
+                  format={FORMATO_FECHA}
+                  allowClear={false}
+                  presets={PRESETS_PERIODO}
+                  onChange={(r) => r?.[0] && r[1] && setFiltros({ desde: r[0].format('YYYY-MM-DD'), hasta: r[1].format('YYYY-MM-DD') })}
+                />
+                {flecha(1)}
+              </Space.Compact>
             )}
           </Col>
           <Col flex="260px">

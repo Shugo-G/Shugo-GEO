@@ -17,6 +17,8 @@ export interface FilaEstado {
   modalidad_id: number;
   modalidad: string;
   trabajando: boolean;
+  /** Cumple años el día consultado (sólo al mirar un día). */
+  cumpleanios: boolean;
   novedades: NovedadResumen[];
 }
 

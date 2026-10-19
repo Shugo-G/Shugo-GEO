@@ -5,7 +5,9 @@ Un empleado está "trabajando" (activo) en una fecha si no tiene ninguna novedad
 vigente. Si tiene varias superpuestas se muestran todas y cuenta en el resumen
 de cada artículo de licencia.
 """
+from calendar import isleap
 from collections import Counter
+from datetime import date
 
 from apps.calendario.models import DiaNoLaborable
 from apps.calendario.serializers import DiaNoLaborableSerializer
@@ -23,7 +25,16 @@ def _empleados_del_periodo(params, hasta):
     return list(filtrar_empleados(params).filter(fecha_ingreso__lte=hasta))
 
 
-def _fila_empleado(empleado, novedades, arbol: Arbol) -> dict:
+def es_cumpleanios(nacimiento: date | None, dia: date | None) -> bool:
+    """El día coincide con el cumpleaños (quien nació un 29/2 lo festeja el 28/2 en años no bisiestos)."""
+    if not nacimiento or not dia:
+        return False
+    if (nacimiento.month, nacimiento.day) == (dia.month, dia.day):
+        return True
+    return (nacimiento.month, nacimiento.day) == (2, 29) and (dia.month, dia.day) == (2, 28) and not isleap(dia.year)
+
+
+def _fila_empleado(empleado, novedades, arbol: Arbol, dia: date | None = None) -> dict:
     return {
         "id": empleado.id,
         "legajo": empleado.legajo,
@@ -39,6 +50,8 @@ def _fila_empleado(empleado, novedades, arbol: Arbol) -> dict:
         "modalidad": empleado.modalidad.nombre,
         "trabajando": not novedades,
         "novedades": [resumir_novedad(n) for n in novedades],
+        # Sólo cuando se mira un día: la tarjeta del Inicio se muestra festiva. No se expone la fecha de nacimiento.
+        "cumpleanios": es_cumpleanios(empleado.fecha_nacimiento, dia),
     }
 
 
@@ -60,7 +73,7 @@ def estado_personal(params) -> dict:
     por_tipo = Counter()
     trabajando = 0
     for empleado in empleados:
-        fila = _fila_empleado(empleado, novedades.get(empleado.id, []), arbol)
+        fila = _fila_empleado(empleado, novedades.get(empleado.id, []), arbol, desde if desde == hasta else None)
         filas.append(fila)
         trabajando += fila["trabajando"]
         for tipo_id in {n["tipo_id"] for n in fila["novedades"]}:

@@ -99,3 +99,25 @@ class GrillaNovedadAbiertaTests(TestCase):
         celdas = r.data["empleados"][0]["celdas"]
         self.assertIn(str(h), celdas)
         self.assertNotIn(str(h + timedelta(days=1)), celdas)
+
+
+class CumpleaniosTests(TestCase):
+    def test_marca_el_cumpleanios_del_dia_mirado(self):
+        d = datos_base()
+        cumple = crear_empleado(d["area"], d["planta"], 1, fecha_nacimiento=date(1990, 9, 15))
+        otro = crear_empleado(d["area"], d["planta"], 2, fecha_nacimiento=date(1990, 9, 16))
+        api = cliente()
+        filas = {e["id"]: e for e in api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data["empleados"]}
+        self.assertEqual((filas[cumple.id]["cumpleanios"], filas[otro.id]["cumpleanios"]), (True, False))
+        self.assertNotIn("fecha_nacimiento", filas[cumple.id])
+        # En un período no se marca
+        filas = api.get("/api/dashboard/estado/", {"desde": "2026-09-14", "hasta": "2026-09-20"}).data["empleados"]
+        self.assertFalse(any(e["cumpleanios"] for e in filas))
+
+    def test_29_de_febrero(self):
+        from .services import es_cumpleanios
+
+        nacimiento = date(2000, 2, 29)
+        self.assertTrue(es_cumpleanios(nacimiento, date(2027, 2, 28)))
+        self.assertFalse(es_cumpleanios(nacimiento, date(2028, 2, 28)))
+        self.assertTrue(es_cumpleanios(nacimiento, date(2028, 2, 29)))

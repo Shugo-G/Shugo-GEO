@@ -3,6 +3,7 @@ import { Badge, Empty, Tag, Tooltip, Typography } from 'antd';
 import { fmtFechaCorta } from '@/core/utils/format';
 import { COLOR_ACTIVO } from '@/app/theme';
 import IconoPersona from '@/shared/components/IconoPersona';
+import { ConGorro, Confeti } from './Cumpleanios';
 import type { EstadoPersonal, FilaEstado } from '../api';
 
 interface Props {
@@ -49,14 +50,22 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   const area = subunidad(fila);
   return (
     <div
-      className="tarjeta-agente"
+      className={`tarjeta-agente ${fila.cumpleanios ? 'tarjeta-cumple' : ''}`}
       style={{ borderBottomColor: color, background: `${color}14` }}
+      title={fila.cumpleanios ? `¡Hoy cumple años ${fila.nombre}!` : undefined}
       onClick={() => navigate(`/personal/${fila.id}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/personal/${fila.id}`)}
     >
-      <IconoPersona color={color} tamanio={64} />
+      {fila.cumpleanios && <Confeti />}
+      {fila.cumpleanios ? (
+        <ConGorro>
+          <IconoPersona color={color} tamanio={64} />
+        </ConGorro>
+      ) : (
+        <IconoPersona color={color} tamanio={64} />
+      )}
       <Typography.Text strong className="tarjeta-agente-nombre" ellipsis={{ tooltip: fila.nombre }}>
         {fila.nombre}
       </Typography.Text>
@@ -86,6 +95,7 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
           ))
         )}
       </div>
+      {fila.cumpleanios && <div className="tarjeta-cumple-saludo">🎂 ¡Feliz cumpleaños!</div>}
     </div>
   );
 }
@@ -115,8 +125,8 @@ export default function TarjetasPorDireccion({ datos, filas, ocultarVacias }: Pr
   if (!filas.length) return <Empty description="Sin empleados para los filtros seleccionados" />;
 
   const columnas = [
-    ...grupos.map((g) => ({ clave: String(g.id), titulo: g.nombre, subtitulo: g.tipo, filas: porGrupo.get(g.id) ?? [] })),
-    ...(sinGrupo.length ? [{ clave: 'sin', titulo: 'Sin dirección', subtitulo: '', filas: sinGrupo }] : []),
+    ...grupos.map((g) => ({ clave: String(g.id), titulo: g.nombre, filas: porGrupo.get(g.id) ?? [] })),
+    ...(sinGrupo.length ? [{ clave: 'sin', titulo: 'Sin dirección', filas: sinGrupo }] : []),
   ];
 
   return (
@@ -126,14 +136,7 @@ export default function TarjetasPorDireccion({ datos, filas, ocultarVacias }: Pr
         return (
           <section key={c.clave} className="columna-direccion">
             <header>
-              <div>
-                <Typography.Text strong>{c.titulo}</Typography.Text>
-                <div>
-                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                    {c.subtitulo}
-                  </Typography.Text>
-                </div>
-              </div>
+              <Typography.Text strong>{c.titulo}</Typography.Text>
               <Tooltip title={datos.es_un_dia ? 'Trabajando / total' : 'Sin ausencias en el período / total'}>
                 <span className="columna-direccion-conteo">
                   <span style={{ color: COLOR_ACTIVO, fontWeight: 600 }}>{trabajando}</span> / {c.filas.length}
