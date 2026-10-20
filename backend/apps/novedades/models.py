@@ -22,6 +22,12 @@ COLOR_POR_DEFECTO = "#1677ff"
 
 
 class TipoNovedad(CatalogoBase):
+    etiqueta = models.CharField(
+        "etiqueta",
+        max_length=20,
+        default="",
+        help_text="Nombre corto que se muestra en las tarjetas del Inicio (p. ej. ART.36). El nombre completo se ve en la barra de estados.",
+    )
     color = models.CharField(
         "color", max_length=20, default=COLOR_POR_DEFECTO, help_text="Color con el que se muestra en el Inicio y el calendario."
     )

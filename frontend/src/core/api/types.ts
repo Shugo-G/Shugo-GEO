@@ -25,6 +25,8 @@ export interface NovedadResumen {
   id: number;
   tipo_id: number;
   tipo: string;
+  /** Nombre corto del artículo (tarjetas del Inicio). */
+  etiqueta: string;
   color: string;
   desde: string;
   hasta: string | null;

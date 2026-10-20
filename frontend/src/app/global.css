@@ -262,8 +262,10 @@ body {
 }
 /* Tarjeta cuadrada: foto arriba, datos debajo; la franja superior indica el estado. */
 .tarjeta-agente {
-  /* Cuadrada; si el contenido no entra (varias novedades) crece en alto en lugar de cortarse. */
-  aspect-ratio: 1 / 1;
+  /* Tamaño fijo: todas las filas quedan parejas (una sola licencia visible + "+N"). */
+  position: relative;
+  height: 178px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -583,11 +585,9 @@ body {
 
 /* ---- Cumpleaños: tarjeta festiva en el Inicio ---- */
 .tarjeta-cumple {
-  position: relative;
-  padding-top: 22px;
   box-shadow: 0 0 0 2px #faad14;
 }
-.tarjeta-cumple > *:not(.confeti) {
+.tarjeta-cumple > *:not(.confeti):not(.liston-cumple) {
   position: relative;
   z-index: 1;
 }
@@ -621,18 +621,12 @@ body {
 }
 .gorro {
   position: absolute;
-  width: 30px;
-  height: 36px;
-  top: -22px;
-  right: -4px;
+  width: 24px;
+  height: 29px;
+  top: -12px;
+  right: -6px;
   transform: rotate(22deg);
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
-}
-.tarjeta-cumple-saludo {
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #d46b08;
 }
 @media (prefers-reduced-motion: reduce) {
   .confeti i {
@@ -641,3 +635,55 @@ body {
   }
 }
 
+
+/* Listón diagonal "¡Feliz cumpleaños!" en la esquina superior izquierda */
+.liston-cumple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 104px;
+  height: 104px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+.liston-cumple span {
+  position: absolute;
+  top: 26px;
+  left: -38px;
+  width: 158px;
+  padding: 2px 0;
+  transform: rotate(-45deg);
+  background: linear-gradient(90deg, #fa8c16, #eb2f96);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.tarjeta-agente-novedad {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  column-gap: 4px;
+  max-width: 100%;
+}
+.tarjeta-agente-novedad .ant-badge {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tarjeta-agente-novedad .tarjeta-agente-fechas {
+  flex-basis: 100%;
+}
+.tarjeta-agente-mas {
+  font-size: 11px;
+  font-weight: 600;
+  color: #595959;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 0 5px;
+}

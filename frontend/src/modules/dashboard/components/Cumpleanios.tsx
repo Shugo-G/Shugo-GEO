@@ -44,3 +44,12 @@ export function ConGorro({ children }: { children: ReactNode }) {
     </span>
   );
 }
+
+/** Listón en la esquina superior izquierda: no agrega renglones a la tarjeta. */
+export function ListonCumple() {
+  return (
+    <span className="liston-cumple" aria-label="Feliz cumpleaños">
+      <span>¡Feliz cumpleaños!</span>
+    </span>
+  );
+}

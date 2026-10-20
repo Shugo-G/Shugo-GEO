@@ -29,6 +29,7 @@ def resumir_novedad(novedad: Novedad) -> dict:
         "id": novedad.id,
         "tipo_id": novedad.tipo_id,
         "tipo": novedad.tipo.nombre,
+        "etiqueta": novedad.tipo.etiqueta or novedad.tipo.nombre,
         "color": novedad.tipo.color,
         "desde": novedad.fecha_desde,
         "hasta": novedad.fecha_hasta,

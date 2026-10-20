@@ -121,3 +121,17 @@ class CumpleaniosTests(TestCase):
         self.assertTrue(es_cumpleanios(nacimiento, date(2027, 2, 28)))
         self.assertFalse(es_cumpleanios(nacimiento, date(2028, 2, 28)))
         self.assertTrue(es_cumpleanios(nacimiento, date(2028, 2, 29)))
+
+
+class EtiquetaArticuloTests(TestCase):
+    def test_etiqueta_obligatoria_y_en_el_resumen_de_la_tarjeta(self):
+        d = datos_base()
+        api = cliente()
+        r = api.post("/api/novedades/tipos/", {"nombre": "Art. 36 - Día de cumpleaños", "etiqueta": "  "}, format="json")
+        self.assertIn("etiqueta", r.data)
+        r = api.post("/api/novedades/tipos/", {"nombre": "Art. 36 - Día de cumpleaños", "etiqueta": "ART.36"}, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        empleado = crear_empleado(d["area"], d["planta"])
+        Novedad.objects.create(empleado=empleado, tipo_id=r.data["id"], fecha_desde=date(2026, 9, 15), fecha_hasta=date(2026, 9, 15), dias=1)
+        fila = api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data["empleados"][0]
+        self.assertEqual((fila["novedades"][0]["etiqueta"], fila["novedades"][0]["tipo"]), ("ART.36", "Art. 36 - Día de cumpleaños"))

@@ -105,7 +105,7 @@ class BolsaCompartidaTests(TestCase):
         # Vacaciones es la bolsa de invernal: no puede a su vez usar el saldo de otro tipo
         otro = self.api.post(
             "/api/novedades/tipos/",
-            {"nombre": "Otra", "color": "#13c2c2", "descuenta_saldo": True},
+            {"nombre": "Otra", "etiqueta": "OTRA", "color": "#13c2c2", "descuenta_saldo": True},
             format="json",
         ).data
         r = self.api.patch(f"/api/novedades/tipos/{self.vacaciones.id}/", {"saldo_de": otro["id"]}, format="json")
@@ -289,7 +289,7 @@ class SaldoPorAnioTests(TestCase):
     def test_quien_comparte_bolsa_hereda_el_saldo_por_anio(self):
         r = self.api.post(
             "/api/novedades/tipos/",
-            {"nombre": "Invierno extra", "color": "#1677ff", "saldo_de": self.invierno.id, "saldo_por_anio": True},
+            {"nombre": "Invierno extra", "etiqueta": "INV+", "color": "#1677ff", "saldo_de": self.invierno.id, "saldo_por_anio": True},
             format="json",
         )
         self.assertEqual(r.status_code, 201, r.data)

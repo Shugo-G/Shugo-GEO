@@ -119,6 +119,13 @@ export function TiposNovedadPage() {
           requerido: true,
           renderTabla: (v, fila) => <Badge color={fila.color} text={String(v)} />,
         },
+        {
+          nombre: 'etiqueta',
+          etiqueta: 'Etiqueta',
+          tipo: 'texto',
+          requerido: true,
+          ayuda: 'Nombre corto que se muestra en las tarjetas del Inicio (máx. 20 caracteres, p. ej. ART.36). El nombre completo se ve en la barra de estados.',
+        },
         { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
         {
           nombre: 'color',

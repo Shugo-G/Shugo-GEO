@@ -47,6 +47,8 @@ export interface Modalidad extends Catalogo {
 
 /** Artículo de licencia (TipoNovedad en el backend). */
 export interface TipoNovedad extends Catalogo {
+  /** Nombre corto para las tarjetas del Inicio (p. ej. ART.36). */
+  etiqueta: string;
   /** Color con el que se muestra en el Inicio y el calendario. */
   color: string;
   computo_dias: 'HABILES' | 'CORRIDOS';

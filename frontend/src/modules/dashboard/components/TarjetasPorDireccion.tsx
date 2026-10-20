@@ -3,7 +3,7 @@ import { Badge, Empty, Tag, Tooltip, Typography } from 'antd';
 import { fmtFechaCorta } from '@/core/utils/format';
 import { COLOR_ACTIVO } from '@/app/theme';
 import IconoPersona from '@/shared/components/IconoPersona';
-import { ConGorro, Confeti } from './Cumpleanios';
+import { ConGorro, Confeti, ListonCumple } from './Cumpleanios';
 import type { EstadoPersonal, FilaEstado } from '../api';
 
 interface Props {
@@ -43,11 +43,12 @@ function subunidad(fila: FilaEstado): string | null {
   return fila.unidad === fila.direccion ? null : partes.slice(partes.indexOf(fila.direccion) + 1).join(' › ') || fila.unidad;
 }
 
-/** Tarjeta cuadrada: ícono de persona con el color del estado, nombre, área y estado; la línea de color va abajo. */
+/** Tarjeta de tamaño fijo: ícono con el color del estado, nombre, área y licencia (etiqueta corta); la línea de color va abajo. */
 function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   const navigate = useNavigate();
   const color = colorEstado(fila);
   const area = subunidad(fila);
+  const principal = novedadPrincipal(fila);
   return (
     <div
       className={`tarjeta-agente ${fila.cumpleanios ? 'tarjeta-cumple' : ''}`}
@@ -59,6 +60,7 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/personal/${fila.id}`)}
     >
       {fila.cumpleanios && <Confeti />}
+      {fila.cumpleanios && <ListonCumple />}
       {fila.cumpleanios ? (
         <ConGorro>
           <IconoPersona color={color} tamanio={64} />
@@ -73,29 +75,35 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
         {area ?? 'Personal de la dirección'}
       </Typography.Text>
       <div className="tarjeta-agente-estado">
-        {fila.novedades.length === 0 ? (
-          <Badge color={COLOR_ACTIVO} text="Activo" />
-        ) : (
-          fila.novedades.map((n) => (
-            <Tooltip key={n.id} title={n.motivo || n.tipo}>
-              <div className="tarjeta-agente-novedad">
-                <Badge color={n.color} text={n.tipo} />
-                <div className="tarjeta-agente-fechas">
-                  {fmtFechaCorta(n.desde)} →{' '}
-                  {n.hasta ? (
-                    fmtFechaCorta(n.hasta)
-                  ) : (
-                    <Tag color="red" bordered={false} style={{ fontSize: 10, marginInlineEnd: 0 }}>
-                      abierta
-                    </Tag>
-                  )}
-                </div>
+        {principal ? (
+          // Tamaño fijo: se muestra la licencia principal (etiqueta corta) y, si hay más, "+N"; el detalle va en el tooltip.
+          <Tooltip
+            title={fila.novedades.map((n) => (
+              <div key={n.id}>
+                {n.tipo}: {fmtFechaCorta(n.desde)} → {n.hasta ? fmtFechaCorta(n.hasta) : 'abierta'}
+                {n.motivo ? ` · ${n.motivo}` : ''}
               </div>
-            </Tooltip>
-          ))
+            ))}
+          >
+            <div className="tarjeta-agente-novedad">
+              <Badge color={principal.color} text={principal.etiqueta} />
+              {fila.novedades.length > 1 && <span className="tarjeta-agente-mas">+{fila.novedades.length - 1}</span>}
+              <div className="tarjeta-agente-fechas">
+                {fmtFechaCorta(principal.desde)} →{' '}
+                {principal.hasta ? (
+                  fmtFechaCorta(principal.hasta)
+                ) : (
+                  <Tag color="red" bordered={false} style={{ fontSize: 10, marginInlineEnd: 0, lineHeight: '16px' }}>
+                    abierta
+                  </Tag>
+                )}
+              </div>
+            </div>
+          </Tooltip>
+        ) : (
+          <Badge color={COLOR_ACTIVO} text="Activo" />
         )}
       </div>
-      {fila.cumpleanios && <div className="tarjeta-cumple-saludo">🎂 ¡Feliz cumpleaños!</div>}
     </div>
   );
 }

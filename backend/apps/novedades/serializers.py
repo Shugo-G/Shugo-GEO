@@ -16,6 +16,7 @@ class TipoNovedadSerializer(CatalogoSerializer):
     class Meta(CatalogoSerializer.Meta):
         model = TipoNovedad
         fields = CatalogoSerializer.Meta.fields + [
+            "etiqueta",
             "color",
             "computo_dias",
             "computo_dias_display",
@@ -28,6 +29,12 @@ class TipoNovedadSerializer(CatalogoSerializer):
             "requiere_documentacion",
             "permite_sin_fecha_fin",
         ]
+
+    def validate_etiqueta(self, valor):
+        valor = valor.strip()
+        if not valor:
+            raise serializers.ValidationError("Indique una etiqueta corta (p. ej. ART.36).")
+        return valor
 
     def validate(self, attrs):
         def valor(campo):

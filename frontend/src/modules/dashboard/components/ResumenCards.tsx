@@ -10,6 +10,14 @@ interface Props {
   onToggleEstado: (estado: string | null) => void;
 }
 
+/** Primero los artículos con licencias (de mayor a menor cantidad); después el resto, en el orden configurado. */
+function ordenarPorCantidad<T extends { cantidad: number }>(articulos: T[]): T[] {
+  return articulos
+    .map((a, i) => ({ a, i }))
+    .sort((x, y) => (y.a.cantidad > 0 ? 1 : 0) - (x.a.cantidad > 0 ? 1 : 0) || y.a.cantidad - x.a.cantidad || x.i - y.i)
+    .map(({ a }) => a);
+}
+
 function Punto({ color }: { color: string }) {
   return <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, display: 'inline-block' }} />;
 }
@@ -48,7 +56,7 @@ export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggl
           />
         </Card>
       </Col>
-      {resumen.por_tipo.map((c) => (
+      {ordenarPorCantidad(resumen.por_tipo).map((c) => (
         <Col key={c.id} xs={12} sm={8} flex="1 1 120px">
           <Card
             size="small"

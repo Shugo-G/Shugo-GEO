@@ -4,11 +4,11 @@ from apps.calendario.services import ComputoDias
 from .models import TipoNovedad
 
 TIPOS = [
-    # nombre, color, cómputo, descuenta saldo, requiere doc, permite abierta, orden
-    ("Licencia vacaciones", "#faad14", ComputoDias.HABILES, True, False, False, 1),
-    ("Licencia invernal", "#1677ff", ComputoDias.HABILES, False, False, False, 2),
-    ("Licencia médica", "#eb2f96", ComputoDias.CORRIDOS, False, True, True, 3),
-    ("Ausencia", "#f5222d", ComputoDias.HABILES, False, False, True, 4),
+    # nombre, etiqueta, color, cómputo, descuenta saldo, requiere doc, permite abierta, orden
+    ("Licencia vacaciones", "Vacaciones", "#faad14", ComputoDias.HABILES, True, False, False, 1),
+    ("Licencia invernal", "Invernal", "#1677ff", ComputoDias.HABILES, False, False, False, 2),
+    ("Licencia médica", "Médica", "#eb2f96", ComputoDias.CORRIDOS, False, True, True, 3),
+    ("Ausencia", "Ausencia", "#f5222d", ComputoDias.HABILES, False, False, True, 4),
 ]
 
 
@@ -18,9 +18,10 @@ def cargar():
     if TipoNovedad.objects.exists():
         return
     tipos = {}
-    for nombre, color, computo, saldo, doc, abierta, orden in TIPOS:
+    for nombre, etiqueta, color, computo, saldo, doc, abierta, orden in TIPOS:
         tipos[nombre] = TipoNovedad.objects.create(
             nombre=nombre,
+            etiqueta=etiqueta,
             color=color,
             computo_dias=computo,
             descuenta_saldo=saldo,
