@@ -42,7 +42,10 @@ docker compose up -d --build
 docker compose exec backend python manage.py createsuperuser
 ```
 
-nginx publica el puerto `HTTP_PORT` (80 por defecto), sirve el frontend y redirige `/api` y `/admin` a Django.
+El servicio se publica a través de **Nginx Proxy Manager**: el contenedor `frontend` se une a la red externa
+`nginx-proxy-manager_npm-net` (debe existir antes del `up`) y no publica puertos en el host. En NPM se crea un
+*Proxy Host* con **Forward Hostname** `shugo-geo`, **puerto** `80`, esquema `http`, y el certificado SSL.
+El nginx interno sirve el frontend y redirige `/api` y `/admin` a Django; la base y el backend sólo están en la red interna.
 La documentación respaldatoria y las planillas de cargo se guardan en el volumen `media` y **sólo se descargan por la API autenticada**
 (nginx no expone ninguna carpeta de media).
 La base de Docker (PostgreSQL) es independiente de la de desarrollo (SQLite): la primera vez hay que crear el usuario
