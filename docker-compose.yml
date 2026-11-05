@@ -4,6 +4,11 @@
 # Se publica a través de Nginx Proxy Manager: el frontend se une a su red
 # (externa) y NPM le reenvía el tráfico a  shugo-geo:80  (no se publican puertos
 # en el host). La base y el backend quedan sólo en la red interna del proyecto.
+#
+# Ojo con los nombres: en la red de NPM hay otros proyectos, y Docker registra
+# cada servicio con su nombre en todas sus redes. Por eso el servicio web se
+# llama "shugo-geo" (no "frontend") y nginx llega al backend por un alias único
+# ("shugo-geo-backend"), que no puede confundirse con el "backend" de otro proyecto.
 services:
   db:
     image: postgres:16-alpine
@@ -29,7 +34,9 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-shugo}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-shugo_geo}
       DJANGO_MEDIA_ROOT: /data/media
     networks:
-      - interna
+      interna:
+        aliases:
+          - shugo-geo-backend
     volumes:
       - media:/data/media
       - static:/app/staticfiles
@@ -37,17 +44,15 @@ services:
       db:
         condition: service_healthy
 
-  frontend:
+  shugo-geo:
     build: ./frontend
     restart: unless-stopped
     volumes:
       - static:/static:ro
     networks:
-      interna:
-      npm:
-        # Nombre con el que NPM encuentra el servicio (Forward Hostname).
-        aliases:
-          - shugo-geo
+      - interna
+      # NPM lo encuentra por el nombre del servicio (Forward Hostname: shugo-geo).
+      - npm
     depends_on:
       - backend
 
