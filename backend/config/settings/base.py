@@ -122,7 +122,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = env("DJANGO_MEDIA_ROOT", default=str(BASE_DIR / "media"))
 
 # Tamaño máximo de documentación respaldatoria (MB)
-DOCUMENTO_MAX_MB = env.int("DOCUMENTO_MAX_MB", default=10)
+DOCUMENTO_MAX_MB = env.int("DOCUMENTO_MAX_MB", default=50)
 DATA_UPLOAD_MAX_MEMORY_SIZE = DOCUMENTO_MAX_MB * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = DATA_UPLOAD_MAX_MEMORY_SIZE
 
