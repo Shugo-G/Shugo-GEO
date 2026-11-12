@@ -166,3 +166,31 @@ def anular_novedad(novedad: Novedad, motivo: str, usuario) -> Novedad:
     novedad.anulada_por = usuario
     novedad.save()
     return novedad
+
+
+MOTIVO_BAJA = "Baja del agente"
+
+
+def cerrar_por_baja(empleado, fecha: date, usuario=None) -> dict[str, int]:
+    """
+    Cierra las licencias de un agente que se da de baja:
+    - las que todavía no empezaron se anulan;
+    - las abiertas (sin fecha de fin) se cierran en la fecha de baja;
+    - las que seguían después de la baja se interrumpen ese día (los días no tomados vuelven al saldo).
+    Las ya finalizadas no se tocan. Todo queda en el historial.
+    """
+    resumen = {"anuladas": 0, "cerradas": 0, "interrumpidas": 0}
+    for novedad in Novedad.objects.filter(empleado=empleado).select_related("tipo"):
+        if novedad.fecha_desde > fecha:
+            anular_novedad(novedad, MOTIVO_BAJA, usuario)
+            resumen["anuladas"] += 1
+        elif novedad.fecha_hasta is None:
+            novedad.fecha_hasta = fecha
+            novedad.dias = calcular_dias(novedad.tipo, novedad.fecha_desde, fecha)
+            novedad.motivo_interrupcion = MOTIVO_BAJA
+            novedad.save()
+            resumen["cerradas"] += 1
+        elif novedad.fecha_hasta > fecha:
+            interrumpir_novedad(novedad, fecha, MOTIVO_BAJA)
+            resumen["interrumpidas"] += 1
+    return resumen

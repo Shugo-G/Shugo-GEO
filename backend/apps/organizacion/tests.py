@@ -67,3 +67,52 @@ class SeedsOrganizacionTests(TestCase):
         seeds.cargar()
         seeds.cargar()  # idempotente
         self.assertEqual(list(UnidadOrganizativa.objects.values_list("tipo", flat=True)), [TipoUnidad.DIRECCION_GENERAL])
+
+
+class ActoAdministrativoTests(TestCase):
+    def setUp(self):
+        import tempfile
+
+        from django.test import override_settings
+
+        self.media = tempfile.TemporaryDirectory()
+        self.override = override_settings(MEDIA_ROOT=self.media.name)
+        self.override.enable()
+        self.d = datos_base()
+        self.api = cliente()
+        self.infra = UnidadOrganizativa.objects.get(nombre="Dirección de Infraestructura")
+
+    def tearDown(self):
+        self.override.disable()
+        self.media.cleanup()
+
+    def test_unidad_creada_exige_acto_administrativo(self):
+        datos = {"nombre": "Departamento de Soporte Técnico", "tipo": "AREA", "padre": self.infra.id, "creada": True}
+        r = self.api.post("/api/organizacion/unidades/", datos, format="json")
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("acto_administrativo", r.data)
+        r = self.api.post("/api/organizacion/unidades/", {**datos, "acto_administrativo": "Resolución 109-2026"}, format="json")
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual((r.data["creada"], r.data["acto_administrativo"]), (True, "Resolución 109-2026"))
+        # Nombre corto automático (sin "Departamento de") o el configurado
+        self.assertEqual(r.data["nombre_tarjeta"], "Soporte Técnico")
+        r = self.api.patch(f"/api/organizacion/unidades/{r.data['id']}/", {"nombre_corto": "Soporte"}, format="json")
+        self.assertEqual(r.data["nombre_tarjeta"], "Soporte")
+
+    def test_adjunto_del_acto(self):
+        import os
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        from .models import DocumentoUnidad
+
+        unidad = self.d["area"]
+        archivo = SimpleUploadedFile("resolucion.pdf", b"%PDF-1.4 acto", content_type="application/pdf")
+        r = self.api.post("/api/organizacion/documentos-unidad/", {"unidad": unidad.id, "archivo": archivo}, format="multipart")
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(self.api.get(f"/api/organizacion/unidades/{unidad.id}/").data["documentos_count"], 1)
+        descarga = self.api.get(f"/api/organizacion/documentos-unidad/{r.data['id']}/descargar/")
+        self.assertEqual(b"".join(descarga.streaming_content), b"%PDF-1.4 acto")
+        ruta = DocumentoUnidad.objects.get().archivo.path
+        self.assertEqual(self.api.delete(f"/api/organizacion/unidades/{unidad.id}/").status_code, 204)
+        self.assertFalse(os.path.exists(ruta))

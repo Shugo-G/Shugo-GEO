@@ -7,7 +7,7 @@ direcciones y sus áreas), 12 agentes, saldos por año, licencias en distintos
 estados, cargos patrimoniales y servicios contratados.
 """
 import random
-from datetime import timedelta
+from datetime import time, timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -20,7 +20,7 @@ from apps.calendario.services import contar_dias
 from apps.core.fechas import hoy
 from apps.novedades.models import Novedad, TipoNovedad
 from apps.organizacion import seeds as seeds_organizacion
-from apps.organizacion.models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
+from apps.organizacion.models import Adicional, Cargo, ModalidadContratacion, TipoUnidad, UnidadOrganizativa
 from apps.patrimonio.models import CargoPatrimonial, TipoInsumo
 from apps.patrimonio.services import dar_de_baja, transferir
 from apps.personal.models import Empleado
@@ -128,6 +128,18 @@ class Command(BaseCommand):
                     email=f"{nombre.lower()}.{apellido.lower()}@ushuaia.gob.ar".translate(str.maketrans("áéíóú", "aeiou")),
                 )
             )
+        # Cargos (con su acto administrativo), adicionales y algún horario distinto del habitual.
+        cargos = {n: Cargo.objects.get_or_create(nombre=n)[0] for n in ("DIRECTOR GENERAL", "DIRECTOR", "JEFE DE DEPARTAMENTO")}
+        for indice, cargo, acto in ((0, "DIRECTOR GENERAL", "Decreto 1520-2023"), (1, "DIRECTOR", "Resolución 87-2024"),
+                                    (5, "DIRECTOR", "Resolución 88-2024"), (6, "JEFE DE DEPARTAMENTO", "Resolución 109-2026")):
+            empleados[indice].cargo = cargos[cargo]
+            empleados[indice].cargo_acto_administrativo = acto
+            empleados[indice].save()
+        adicionales = {a.nombre: a for a in Adicional.objects.all()}
+        for indice, nombres in ((6, ["GUARDIA PASIVA"]), (9, ["GUARDIA PASIVA", "FUNCIÓN ESPECÍFICA"]), (2, ["CAPACITADOR"])):
+            empleados[indice].adicionales.set([adicionales[n] for n in nombres if n in adicionales])
+        empleados[7].hora_entrada, empleados[7].hora_salida = time(7, 0), time(14, 0)
+        empleados[7].save()
         return empleados
 
     def _saldos_y_licencias(self, empleados, rnd):

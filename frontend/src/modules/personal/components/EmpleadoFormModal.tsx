@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { App, Col, DatePicker, Divider, Form, Input, Modal, Row, Select } from 'antd';
+import { Alert, App, Col, DatePicker, Divider, Form, Input, Modal, Row, Select, TimePicker } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { erroresDeCampos, mensajeError } from '@/core/api/client';
 import { FORMATO_FECHA, aApi, deApi } from '@/core/utils/format';
 import { modalidadesApi } from '@/shared/api/catalogos';
 import { SITUACIONES, empleadosApi, type Empleado, type SituacionRevista } from '@/shared/api/empleados';
-import { ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
+import { AdicionalSelect, CargoSelect, ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
 
 interface Props {
   open: boolean;
@@ -18,7 +18,12 @@ type Valores = Omit<Empleado, 'fecha_nacimiento' | 'fecha_ingreso' | 'fecha_fin_
   fecha_ingreso: Dayjs;
   fecha_fin_contrato?: Dayjs | null;
   fecha_baja?: Dayjs | null;
+  /** Horario habitual [entrada, salida]. */
+  horario_rango?: [Dayjs, Dayjs] | null;
 };
+
+const HORA = 'HH:mm';
+const HORARIO_POR_DEFECTO: [Dayjs, Dayjs] = [dayjs('08:00', HORA), dayjs('15:00', HORA)];
 
 export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
   const [form] = Form.useForm<Valores>();
@@ -28,6 +33,8 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
 
   const modalidadId = Form.useWatch('modalidad', form);
   const situacion = Form.useWatch('situacion_revista', form) as SituacionRevista | undefined;
+  const cargoId = Form.useWatch('cargo', form);
+  const pasaABaja = situacion === 'BAJA' && !!empleado && empleado.situacion_revista !== 'BAJA';
   const modalidad = modalidades.find((m) => m.id === modalidadId);
 
   useEffect(() => {
@@ -40,19 +47,30 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
         fecha_ingreso: deApi(empleado.fecha_ingreso)!,
         fecha_fin_contrato: deApi(empleado.fecha_fin_contrato),
         fecha_baja: deApi(empleado.fecha_baja),
+        horario_rango: [dayjs(empleado.hora_entrada, 'HH:mm:ss'), dayjs(empleado.hora_salida, 'HH:mm:ss')],
       });
     } else {
-      form.setFieldsValue({ situacion_revista: 'ACTIVO', fecha_ingreso: dayjs() });
+      form.setFieldsValue({ situacion_revista: 'ACTIVO', fecha_ingreso: dayjs(), horario_rango: HORARIO_POR_DEFECTO, adicionales: [] });
     }
   }, [open, empleado, form]);
 
   const onGuardar = async () => {
-    const v = await form.validateFields();
+    const { horario_rango, ...v } = await form.validateFields();
+    const [entrada, salida] = horario_rango ?? HORARIO_POR_DEFECTO;
     try {
       const resultado = await guardar.mutateAsync({
         ...v,
         id: empleado?.id,
         legajo: v.legajo ?? '',
+        etiqueta: v.etiqueta ?? '',
+        cuit: v.cuit ?? '',
+        titulo: v.titulo ?? '',
+        numero_proveedor: v.numero_proveedor ?? '',
+        hora_entrada: entrada.format(HORA),
+        hora_salida: salida.format(HORA),
+        cargo: v.cargo ?? null,
+        cargo_acto_administrativo: v.cargo ? v.cargo_acto_administrativo ?? '' : '',
+        adicionales: v.adicionales ?? [],
         fecha_nacimiento: aApi(v.fecha_nacimiento) ?? null,
         fecha_ingreso: aApi(v.fecha_ingreso)!,
         fecha_fin_contrato: aApi(v.fecha_fin_contrato) ?? null,
@@ -103,8 +121,31 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
             </Form.Item>
           </Col>
           <Col xs={24} sm={8}>
-            <Form.Item name="fecha_nacimiento" label="Fecha de nacimiento">
-              <DatePicker format={FORMATO_FECHA} style={{ width: '100%' }} />
+            <Form.Item name="fecha_nacimiento" label="Fecha de nacimiento" rules={[{ required: true, message: 'Indique la fecha de nacimiento' }]}>
+              <DatePicker format={FORMATO_FECHA} style={{ width: '100%' }} disabledDate={(d) => d.isAfter(dayjs())} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Form.Item
+              name="cuit"
+              label="CUIT"
+              rules={[{ pattern: /^\d{2}-?\d{8}-?\d$/, message: '11 dígitos (con o sin guiones)' }]}
+            >
+              <Input inputMode="numeric" placeholder="20-12345678-9" maxLength={13} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="titulo" label="Título">
+              <Input maxLength={160} placeholder="Ej.: Analista de Sistemas" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="etiqueta"
+              label="Etiqueta para el Inicio"
+              tooltip="Nombre que se muestra en la tarjeta del Inicio. Si se deja vacío se usa el primer apellido y el primer nombre."
+            >
+              <Input maxLength={60} placeholder="Automática: primer apellido y nombre" />
             </Form.Item>
           </Col>
         </Row>
@@ -157,11 +198,52 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
               <Select options={SITUACIONES} />
             </Form.Item>
           </Col>
+          <Col xs={24} sm={8}>
+            <Form.Item
+              name="horario_rango"
+              label="Horario"
+              rules={[{ required: true, message: 'Indique el horario' }]}
+              tooltip="Horario habitual de lunes a viernes. Fuera de él, la tarjeta del Inicio lo muestra Inactivo."
+            >
+              <TimePicker.RangePicker format={HORA} minuteStep={15} allowClear={false} style={{ width: '100%' }} placeholder={['Entrada', 'Salida']} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Form.Item name="numero_proveedor" label="Número de proveedor">
+              <Input maxLength={30} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="cargo" label="Cargo">
+              <CargoSelect />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="cargo_acto_administrativo" label="Acto administrativo del cargo" extra="Por ejemplo: Resolución 109-2026.">
+              <Input maxLength={120} disabled={!cargoId} />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item name="adicionales" label="Adicionales">
+              <AdicionalSelect mode="multiple" maxTagCount={undefined} maxTagTextLength={undefined} placeholder="Capacitador, guardia pasiva..." />
+            </Form.Item>
+          </Col>
           {situacion === 'BAJA' && (
             <Col xs={24} sm={8}>
               <Form.Item name="fecha_baja" label="Fecha de baja" rules={[{ required: true }]}>
                 <DatePicker format={FORMATO_FECHA} style={{ width: '100%' }} />
               </Form.Item>
+            </Col>
+          )}
+          {pasaABaja && (
+            <Col xs={24}>
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="Al dar de baja al agente se cierran sus licencias"
+                description="Las licencias en curso o abiertas terminan en la fecha de baja y las programadas a futuro se anulan (motivo: Baja del agente). Queda registrado en el historial."
+              />
             </Col>
           )}
         </Row>

@@ -7,8 +7,6 @@ import { useGrilla } from '@/shared/api/grilla';
 
 interface Props {
   params: Params;
-  /** Artículos de licencia, para la leyenda de colores. */
-  articulos: { id: number; nombre: string; color: string }[];
   /** Cuando la página ya muestra la leyenda de colores. */
   ocultarLeyenda?: boolean;
 }
@@ -17,19 +15,26 @@ interface Props {
  * Grilla empleado × día. Responde "¿cómo estará conformado el equipo durante
  * un determinado período?" y muestra cuántos agentes trabajan cada día hábil.
  */
-export default function GrillaPeriodo({ params, articulos, ocultarLeyenda = false }: Props) {
+export default function GrillaPeriodo({ params, ocultarLeyenda = false }: Props) {
   const { data, isLoading, isFetching } = useGrilla(params, true);
   const hoy = dayjs().format('YYYY-MM-DD');
 
   if (isLoading) return <Spin style={{ display: 'block', margin: 40 }} />;
   if (!data?.empleados.length) return <Empty description="Sin empleados para los filtros seleccionados" />;
 
+  // Leyenda: sólo los artículos que aparecen en la grilla.
+  const articulos = [
+    ...new Map(
+      data.empleados.flatMap((e) => Object.values(e.celdas).flat()).map((c) => [c.tipo_id, c] as const),
+    ).values(),
+  ];
+
   return (
     <Spin spinning={isFetching && !isLoading}>
       <Space wrap size={16} style={{ marginBottom: 12, display: ocultarLeyenda ? 'none' : undefined }}>
         <Badge color={COLOR_ACTIVO} text="Trabajando (celda vacía)" />
         {articulos.map((t) => (
-          <Badge key={t.id} color={t.color} text={t.nombre} />
+          <Badge key={t.tipo_id} color={t.color} text={t.tipo} />
         ))}
         <span>
           <span style={{ display: 'inline-block', width: 12, height: 12, background: '#f0f0f0', borderRadius: 2, marginRight: 6 }} />

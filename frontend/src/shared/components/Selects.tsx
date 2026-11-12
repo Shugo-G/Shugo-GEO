@@ -1,11 +1,30 @@
 import { Badge, Select, TreeSelect, Typography, type SelectProps, type TreeSelectProps } from 'antd';
 import type { Catalogo, Params } from '@/core/api/types';
-import { useArbolUnidades, modalidadesApi, tiposNovedadApi, type NodoUnidad, type TipoNovedad } from '@/shared/api/catalogos';
+import {
+  useArbolUnidades,
+  adicionalesApi,
+  cargosApi,
+  modalidadesApi,
+  tiposNovedadApi,
+  type NodoUnidad,
+  type TipoNovedad,
+} from '@/shared/api/catalogos';
 import { empleadosApi } from '@/shared/api/empleados';
 import { insumosApi } from '@/shared/api/patrimonio';
-import { COLOR_ACTIVO } from '@/app/theme';
+import { COLOR_ACTIVO, COLOR_INACTIVO } from '@/app/theme';
 
 type Recurso<T extends Catalogo> = { useTodos: (params?: Params) => { data?: T[]; isLoading: boolean } };
+
+/**
+ * Etiquetas de los selects múltiples: una visible (recortada) y "+N" para el resto.
+ * No se usa maxTagCount="responsive": con etiquetas largas (p. ej. "CONTRATO ADMINISTRATIVO")
+ * antd mide y redibuja en bucle, y el navegador se cuelga.
+ */
+const ETIQUETAS_MULTIPLE = {
+  maxTagCount: 1,
+  maxTagTextLength: 15,
+  maxTagPlaceholder: (omitidos: unknown[]) => `+${omitidos.length}`,
+} as const;
 
 type BaseProps = Omit<SelectProps, 'options'> & { soloActivos?: boolean };
 
@@ -24,7 +43,9 @@ function CatalogoSelect<T extends Catalogo>({
       showSearch
       optionFilterProp="texto"
       loading={isLoading}
-      maxTagCount="responsive"
+      {...ETIQUETAS_MULTIPLE}
+      // En modo múltiple la etiqueta muestra el texto plano (se puede recortar); la lista conserva el color.
+      optionLabelProp={props.mode === 'multiple' ? 'texto' : undefined}
       options={data.map((item) => ({ value: item.id, label: renderLabel ? renderLabel(item) : item.nombre, texto: item.nombre }))}
       {...props}
     />
@@ -66,7 +87,7 @@ export const UnidadSelect = ({
       treeNodeLabelProp="nombre"
       treeDefaultExpandAll
       loading={isLoading}
-      maxTagCount="responsive"
+      {...ETIQUETAS_MULTIPLE}
       popupMatchSelectWidth={false}
       treeData={aTreeData(data)}
       {...props}
@@ -75,6 +96,8 @@ export const UnidadSelect = ({
 };
 
 export const InsumoSelect = (props: BaseProps) => <CatalogoSelect recurso={insumosApi} placeholder="Categoría de insumo" {...props} />;
+export const CargoSelect = (props: BaseProps) => <CatalogoSelect recurso={cargosApi} placeholder="Cargo" {...props} />;
+export const AdicionalSelect = (props: BaseProps) => <CatalogoSelect recurso={adicionalesApi} placeholder="Adicionales" {...props} />;
 export const ModalidadSelect = (props: BaseProps) => (
   <CatalogoSelect recurso={modalidadesApi} placeholder="Modalidad" {...props} />
 );
@@ -99,10 +122,12 @@ export const EstadoSelect = (props: Omit<SelectProps, 'options'>) => {
     <Select
       allowClear
       placeholder="Estado"
-      maxTagCount="responsive"
+      {...ETIQUETAS_MULTIPLE}
+      optionLabelProp={props.mode === 'multiple' ? 'texto' : undefined}
       options={[
-        { value: 'trabajando', label: <Badge color={COLOR_ACTIVO} text="Activo (trabajando)" /> },
-        ...data.map((t) => ({ value: String(t.id), label: <Badge color={t.color} text={t.nombre} /> })),
+        { value: 'trabajando', texto: 'Trabajando', label: <Badge color={COLOR_ACTIVO} text="Trabajando" /> },
+        { value: 'inactivo', texto: 'Inactivo', label: <Badge color={COLOR_INACTIVO} text="Inactivo (fuera de horario)" /> },
+        ...data.map((t) => ({ value: String(t.id), texto: t.etiqueta || t.nombre, label: <Badge color={t.color} text={t.nombre} /> })),
       ]}
       {...props}
     />
@@ -119,7 +144,7 @@ export const EmpleadoSelect = ({ incluirBajas = false, ...props }: Omit<SelectPr
       placeholder="Empleado"
       optionFilterProp="texto"
       loading={isLoading}
-      maxTagCount="responsive"
+      {...ETIQUETAS_MULTIPLE}
       options={data.map((e) => ({
         value: e.id,
         label: `${e.nombre_completo} (${e.legajo})`,

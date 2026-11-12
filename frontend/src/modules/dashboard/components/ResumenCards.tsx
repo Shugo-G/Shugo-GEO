@@ -1,6 +1,6 @@
 import { Card, Col, Row, Statistic, Typography } from 'antd';
-import { CheckCircleFilled, TeamOutlined } from '@ant-design/icons';
-import { COLOR_ACTIVO } from '@/app/theme';
+import { CheckCircleFilled, ClockCircleOutlined, TeamOutlined } from '@ant-design/icons';
+import { COLOR_ACTIVO, COLOR_INACTIVO } from '@/app/theme';
 import type { EstadoPersonal } from '../api';
 
 interface Props {
@@ -10,11 +10,12 @@ interface Props {
   onToggleEstado: (estado: string | null) => void;
 }
 
-/** Primero los artículos con licencias (de mayor a menor cantidad); después el resto, en el orden configurado. */
-function ordenarPorCantidad<T extends { cantidad: number }>(articulos: T[]): T[] {
+/** Sólo los artículos con licencias en curso, de mayor a menor cantidad (los que están en 0 no se muestran). */
+function enUso<T extends { cantidad: number }>(articulos: T[]): T[] {
   return articulos
     .map((a, i) => ({ a, i }))
-    .sort((x, y) => (y.a.cantidad > 0 ? 1 : 0) - (x.a.cantidad > 0 ? 1 : 0) || y.a.cantidad - x.a.cantidad || x.i - y.i)
+    .filter(({ a }) => a.cantidad > 0)
+    .sort((x, y) => y.a.cantidad - x.a.cantidad || x.i - y.i)
     .map(({ a }) => a);
 }
 
@@ -23,8 +24,9 @@ function Punto({ color }: { color: string }) {
 }
 
 /**
- * Tarjetas del Inicio: total, trabajando y una por cada artículo de licencia,
- * con su color. Al hacer clic filtran por ese estado.
+ * Tarjetas del Inicio: total, trabajando, inactivos (fuera de horario, sólo al
+ * mirar hoy) y una por cada artículo con licencias en curso, con su color.
+ * Al hacer clic filtran por ese estado.
  */
 export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggleEstado }: Props) {
   const porcentaje = resumen.total ? Math.round((resumen.trabajando / resumen.total) * 100) : 0;
@@ -56,7 +58,27 @@ export default function ResumenCards({ resumen, esUnDia, estadosActivos, onToggl
           />
         </Card>
       </Col>
-      {ordenarPorCantidad(resumen.por_tipo).map((c) => (
+      {resumen.inactivos !== null && (
+        <Col xs={12} sm={8} flex="1 1 120px">
+          <Card
+            size="small"
+            className={`kpi-card ${estadosActivos.includes('inactivo') ? 'activa' : ''}`}
+            style={estilo(COLOR_INACTIVO)}
+            onClick={() => onToggleEstado('inactivo')}
+          >
+            <Statistic
+              title={
+                <>
+                  <ClockCircleOutlined style={{ color: COLOR_INACTIVO }} /> Inactivos
+                </>
+              }
+              value={resumen.inactivos}
+              valueStyle={{ color: resumen.inactivos ? COLOR_INACTIVO : undefined }}
+            />
+          </Card>
+        </Col>
+      )}
+      {enUso(resumen.por_tipo).map((c) => (
         <Col key={c.id} xs={12} sm={8} flex="1 1 120px">
           <Card
             size="small"

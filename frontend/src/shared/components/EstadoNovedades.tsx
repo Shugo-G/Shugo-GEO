@@ -1,7 +1,7 @@
 import { Badge, Space, Tag, Tooltip } from 'antd';
 import type { NovedadResumen } from '@/core/api/types';
 import { fmtFecha } from '@/core/utils/format';
-import { COLOR_ACTIVO } from '@/app/theme';
+import { COLOR_ACTIVO, COLOR_INACTIVO } from '@/app/theme';
 
 /** Punto de color + texto, como en el ejemplo del requerimiento (🟢 Activo, 🟡 Vacaciones...). */
 export function EstadoBadge({ color, texto }: { color: string; texto: string }) {
@@ -12,8 +12,17 @@ export function EstadoBadge({ color, texto }: { color: string; texto: string }) 
  * Estado del empleado según sus novedades vigentes. Sin novedades = Activo.
  * Si hay novedades superpuestas se muestran todas.
  */
-export function EstadoNovedades({ novedades, vertical = true }: { novedades: NovedadResumen[]; vertical?: boolean }) {
-  if (!novedades.length) return <EstadoBadge color={COLOR_ACTIVO} texto="Activo" />;
+export function EstadoNovedades({
+  novedades,
+  vertical = true,
+  inactivo = false,
+}: {
+  novedades: NovedadResumen[];
+  vertical?: boolean;
+  /** Sin licencias pero fuera de su horario (Inicio, al mirar hoy). */
+  inactivo?: boolean;
+}) {
+  if (!novedades.length) return inactivo ? <EstadoBadge color={COLOR_INACTIVO} texto="Inactivo" /> : <EstadoBadge color={COLOR_ACTIVO} texto="Activo" />;
   return (
     <Space direction={vertical ? 'vertical' : 'horizontal'} size={2} wrap>
       {novedades.map((n) => (

@@ -9,6 +9,8 @@ class EmpleadoFilter(django_filters.FilterSet):
     # Incluye a quienes dependen de unidades inferiores.
     unidad = django_filters.CharFilter(method="filtrar_unidad")
     modalidad = django_filters.BaseInFilter(field_name="modalidad_id")
+    cargo = django_filters.BaseInFilter(field_name="cargo_id")
+    adicional = django_filters.BaseInFilter(field_name="adicionales__id", distinct=True)
     situacion_revista = django_filters.BaseInFilter(field_name="situacion_revista")
     contrato_vence_antes = django_filters.DateFilter(field_name="fecha_fin_contrato", lookup_expr="lte")
 

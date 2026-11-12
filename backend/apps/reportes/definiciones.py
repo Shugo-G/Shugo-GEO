@@ -10,12 +10,13 @@ from collections import Counter
 from apps.core.fechas import hoy, parse_fecha_param
 from apps.dashboard.services import estado_personal
 from apps.novedades.models import Novedad, TipoNovedad
+from apps.organizacion.models import Adicional
 from apps.organizacion.selectors import Arbol
 from apps.personal.selectors import filtrar_empleados
 from apps.vacaciones.services import bolsas_de_saldo, saldos_por_empleado
 
 from .base import Columna, Filtro, Reporte, registrar
-from .utils import ids
+from .utils import fmt_cuit, ids
 
 # ---------------------------------------------------------------------------
 # Personal
@@ -35,8 +36,11 @@ class NominaPersonal(Reporte):
             Columna("legajo", "Legajo", 10),
             Columna("nombre", "Apellido y nombre", 28),
             Columna("dni", "DNI", 11),
+            Columna("cuit", "CUIT", 14),
             Columna("unidad", "Unidad organizativa", 32),
+            Columna("cargo", "Cargo", 20),
             Columna("modalidad", "Modalidad", 18),
+            Columna("horario", "Horario", 14),
             Columna("fecha_ingreso", "Ingreso", 11, "fecha"),
             Columna("fecha_fin_contrato", "Fin contrato", 11, "fecha"),
             Columna("telefono", "Teléfono", 14),
@@ -52,8 +56,11 @@ class NominaPersonal(Reporte):
                 "legajo": e.legajo,
                 "nombre": e.nombre_completo,
                 "dni": e.dni,
+                "cuit": fmt_cuit(e.cuit),
                 "unidad": arbol.ruta(e.unidad_id),
+                "cargo": e.cargo.nombre if e.cargo_id else "",
                 "modalidad": e.modalidad.nombre,
+                "horario": e.horario,
                 "fecha_ingreso": e.fecha_ingreso,
                 "fecha_fin_contrato": e.fecha_fin_contrato,
                 "telefono": e.telefono,
@@ -62,6 +69,47 @@ class NominaPersonal(Reporte):
             }
             for e in empleados
         ]
+
+
+@registrar
+class PersonalPorAdicional(Reporte):
+    clave = "adicionales"
+    titulo = "Personal por adicional"
+    descripcion = "Agentes que perciben cada adicional (capacitador, guardia pasiva, fallo de caja...). Sin filtro lista todos los adicionales."
+    grupo = "Personal"
+    filtros = [Filtro("adicional"), Filtro("unidad"), Filtro("modalidad")]
+    horizontal = False
+
+    def columnas(self, params):
+        return [
+            Columna("adicional", "Adicional", 22),
+            Columna("legajo", "Legajo", 10),
+            Columna("nombre", "Apellido y nombre", 28),
+            Columna("unidad", "Unidad organizativa", 30),
+            Columna("cargo", "Cargo", 20),
+            Columna("modalidad", "Modalidad", 18),
+        ]
+
+    def filas(self, params):
+        adicionales = Adicional.objects.all()
+        if elegidos := ids(params.get("adicional")):
+            adicionales = adicionales.filter(id__in=elegidos)
+        empleados = filtrar_empleados(params)
+        arbol = Arbol()
+        filas = []
+        for adicional in adicionales:
+            for e in empleados.filter(adicionales=adicional):
+                filas.append(
+                    {
+                        "adicional": adicional.nombre,
+                        "legajo": e.legajo,
+                        "nombre": e.nombre_completo,
+                        "unidad": arbol.ruta(e.unidad_id),
+                        "cargo": e.cargo.nombre if e.cargo_id else "",
+                        "modalidad": e.modalidad.nombre,
+                    }
+                )
+        return filas
 
 
 class _EstadoEnFecha(Reporte):

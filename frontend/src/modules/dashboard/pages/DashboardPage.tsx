@@ -39,10 +39,10 @@ import { descargarArchivo } from '@/core/utils/descargar';
 import { FORMATO_FECHA, fmtFecha, hoyApi } from '@/core/utils/format';
 import { EstadoNovedades } from '@/shared/components/EstadoNovedades';
 import IconoPersona from '@/shared/components/IconoPersona';
-import { COLOR_ACTIVO } from '@/app/theme';
+import { COLOR_ACTIVO, COLOR_INACTIVO } from '@/app/theme';
 import RutaUnidad from '@/shared/components/RutaUnidad';
 import { EmpleadoSelect, EstadoSelect, ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
-import { useEstadoPersonal, type FilaEstado } from '../api';
+import { esInactivo, useEstadoPersonal, type FilaEstado } from '../api';
 import GrillaPeriodo from '@/shared/components/GrillaPeriodo';
 import TarjetasPorDireccion from '../components/TarjetasPorDireccion';
 import ResumenCards from '../components/ResumenCards';
@@ -144,7 +144,7 @@ export default function DashboardPage() {
       sorter: (a, b) => a.nombre.localeCompare(b.nombre),
       render: (_, fila) => (
         <Space>
-          <IconoPersona color={fila.novedades[0]?.color ?? COLOR_ACTIVO} tamanio={36} />
+          <IconoPersona color={fila.novedades[0]?.color ?? (esInactivo(fila) ? COLOR_INACTIVO : COLOR_ACTIVO)} tamanio={36} />
           <div>
             <Link to={`/personal/${fila.id}`}>{fila.nombre}</Link>
             <div>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
       title: modo === 'dia' ? 'Estado actual' : 'Estado en el período',
       key: 'estado',
       sorter: (a, b) => Number(b.trabajando) - Number(a.trabajando) || a.novedades.length - b.novedades.length,
-      render: (_, fila) => <EstadoNovedades novedades={fila.novedades} />,
+      render: (_, fila) => <EstadoNovedades novedades={fila.novedades} inactivo={esInactivo(fila)} />,
     },
     {
       title: 'Desde',
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                       Próximos {DIAS_GRILLA_MODO_DIA} días desde la fecha seleccionada. Use el modo "Período" para elegir otro rango (máx. 92 días).
                     </Typography.Paragraph>
                   )}
-                  <GrillaPeriodo params={paramsGrilla} articulos={data?.resumen.por_tipo ?? []} />
+                  <GrillaPeriodo params={paramsGrilla} />
                 </>
               ),
             },

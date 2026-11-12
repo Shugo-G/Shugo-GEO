@@ -9,7 +9,7 @@ import PageHeader from '@/core/components/PageHeader';
 import { descargarArchivo } from '@/core/utils/descargar';
 import { FORMATO_FECHA, fmtFecha } from '@/core/utils/format';
 import { SITUACIONES } from '@/shared/api/empleados';
-import { EmpleadoSelect, InsumoSelect, ModalidadSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
+import { AdicionalSelect, EmpleadoSelect, InsumoSelect, ModalidadSelect, TipoNovedadSelect, UnidadSelect } from '@/shared/components/Selects';
 
 interface FiltroReporte {
   nombre: string;
@@ -55,6 +55,8 @@ function CampoFiltro({ filtro, ...control }: { filtro: FiltroReporte; value?: ne
       return <TipoNovedadSelect mode={modo} soloActivos={false} placeholder="Todos" {...props} />;
     case 'tipo_saldo':
       return <TipoNovedadSelect mode={modo} soloConSaldo placeholder="Todos" {...props} />;
+    case 'adicional':
+      return <AdicionalSelect mode={modo} placeholder="Todos" {...props} />;
     case 'tipo_insumo':
       return <InsumoSelect mode={modo} placeholder="Todos" {...props} />;
     case 'situacion_cargo':

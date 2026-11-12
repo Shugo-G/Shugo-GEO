@@ -24,8 +24,8 @@ def serializar_historial(obj, limite: int = 100) -> list[dict]:
                 cambios.append(
                     {
                         "campo": str(campo.verbose_name),
-                        "anterior": _texto(cambio.old),
-                        "nuevo": _texto(cambio.new),
+                        "anterior": _texto(_valor_m2m(campo, cambio.old)),
+                        "nuevo": _texto(_valor_m2m(campo, cambio.new)),
                     }
                 )
         resultado.append(
@@ -39,6 +39,15 @@ def serializar_historial(obj, limite: int = 100) -> list[dict]:
             }
         )
     return resultado
+
+
+def _valor_m2m(campo, valor):
+    """Las relaciones muchos-a-muchos llegan como lista de filas: se muestran los nombres."""
+    if not campo.many_to_many or not isinstance(valor, list):
+        return valor
+    ids = [fila.get(campo.m2m_reverse_field_name()) for fila in valor]
+    nombres = {o.pk: str(o) for o in campo.related_model._default_manager.filter(pk__in=ids)}
+    return ", ".join(sorted(nombres.get(i, str(i)) for i in ids))
 
 
 def _texto(valor):

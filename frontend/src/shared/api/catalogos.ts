@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/core/api/client';
 import { crearRecurso } from '@/core/api/crud';
-import type { Catalogo, DiaNoLaborable } from '@/core/api/types';
+import type { Catalogo, DiaNoLaborable, DocumentoAdjunto } from '@/core/api/types';
 
 export type TipoUnidad = 'DIRECCION_GENERAL' | 'DIRECCION' | 'AREA';
 
@@ -19,6 +19,13 @@ export interface UnidadOrganizativa extends Catalogo {
   padre: number | null;
   padre_nombre: string | null;
   ruta: string;
+  /** Nombre para las tarjetas del Inicio; vacío = el nombre sin "DEPARTAMENTO DE". */
+  nombre_corto: string;
+  nombre_tarjeta: string;
+  /** Creada formalmente por un acto administrativo (resolución, decreto...). */
+  creada: boolean;
+  acto_administrativo: string;
+  documentos_count: number;
 }
 
 /** Nodo del árbol de estructura (endpoint /organizacion/unidades/arbol/). */
@@ -31,6 +38,9 @@ export interface NodoUnidad {
   padre: number | null;
   orden: number;
   activo: boolean;
+  nombre_corto: string;
+  creada: boolean;
+  acto_administrativo: string;
   ruta: string;
   /** Agentes activos asignados directamente a la unidad. */
   empleados: number;
@@ -78,5 +88,25 @@ export function useArbolUnidades(soloActivas = false) {
   });
 }
 export const modalidadesApi = crearRecurso<Modalidad>('organizacion/modalidades');
+export const cargosApi = crearRecurso<Catalogo>('organizacion/cargos');
+export const adicionalesApi = crearRecurso<Catalogo>('organizacion/adicionales');
 export const tiposNovedadApi = crearRecurso<TipoNovedad>('novedades/tipos');
 export const noLaborablesApi = crearRecurso<DiaNoLaborable>('calendario/no-laborables');
+
+export interface DocumentoUnidad extends DocumentoAdjunto {
+  unidad: number;
+}
+
+/** Adjuntos de una unidad: el acto administrativo que la crea. */
+export const documentosUnidadApi = {
+  listar: async (unidad: number) =>
+    (await api.get<DocumentoUnidad[]>('/organizacion/documentos-unidad/', { params: { unidad } })).data,
+  subir: async (unidad: number, archivo: File) => {
+    const datos = new FormData();
+    datos.append('unidad', String(unidad));
+    datos.append('archivo', archivo);
+    return (await api.post<DocumentoUnidad>('/organizacion/documentos-unidad/', datos)).data;
+  },
+  eliminar: async (id: number) => api.delete(`/organizacion/documentos-unidad/${id}/`),
+  urlDescarga: (id: number) => `/organizacion/documentos-unidad/${id}/descargar/`,
+};

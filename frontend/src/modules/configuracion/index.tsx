@@ -21,6 +21,14 @@ const PANTALLAS: (MenuItemDef & Pick<RouteDef, 'component'>)[] = [
     permiso: 'organizacion.view_modalidadcontratacion',
     component: catalogo('ModalidadesPage'),
   },
+  { key: 'cargos', label: 'Cargos', path: '/configuracion/cargos', permiso: 'organizacion.view_cargo', component: catalogo('CargosPage') },
+  {
+    key: 'adicionales',
+    label: 'Adicionales',
+    path: '/configuracion/adicionales',
+    permiso: 'organizacion.view_adicional',
+    component: catalogo('AdicionalesPage'),
+  },
   {
     key: 'tipos',
     label: 'Artículos de licencia',

@@ -35,7 +35,7 @@ import { Can } from '@/core/auth/guards';
 import PageHeader from '@/core/components/PageHeader';
 import { descargarArchivo } from '@/core/utils/descargar';
 import { fmtFecha } from '@/core/utils/format';
-import { SITUACIONES, empleadosApi } from '@/shared/api/empleados';
+import { SITUACIONES, empleadosApi, fmtCuit } from '@/shared/api/empleados';
 import { novedadesApi, type Novedad } from '@/shared/api/novedades';
 import { CONCEPTOS, movimientosApi, type ConceptoMovimiento, type MovimientoSaldo } from '@/shared/api/saldos';
 import { EstadoNovedades } from '@/shared/components/EstadoNovedades';
@@ -218,6 +218,8 @@ export default function FichaEmpleadoPage() {
               >
               <Descriptions.Item label="DNI">{empleado.dni}</Descriptions.Item>
               <Descriptions.Item label="Legajo">{empleado.legajo}</Descriptions.Item>
+              <Descriptions.Item label="CUIT">{fmtCuit(empleado.cuit)}</Descriptions.Item>
+              <Descriptions.Item label="Título">{empleado.titulo || '—'}</Descriptions.Item>
               <Descriptions.Item label="Unidad organizativa" span="filled">
                 {empleado.unidad_ruta}{' '}
                 <Tag bordered={false} style={{ marginInlineStart: 4 }}>
@@ -229,6 +231,15 @@ export default function FichaEmpleadoPage() {
                 {empleado.fecha_nacimiento && ` (${dayjs().diff(empleado.fecha_nacimiento, 'year')} años)`}
               </Descriptions.Item>
               <Descriptions.Item label="Modalidad">{empleado.modalidad_nombre}</Descriptions.Item>
+              <Descriptions.Item label="Cargo">
+                {empleado.cargo_nombre ?? '—'}
+                {empleado.cargo_acto_administrativo && (
+                  <Typography.Text type="secondary"> · {empleado.cargo_acto_administrativo}</Typography.Text>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label="Horario">{empleado.horario}</Descriptions.Item>
+              <Descriptions.Item label="N.º de proveedor">{empleado.numero_proveedor || '—'}</Descriptions.Item>
+
               <Descriptions.Item label="Ingreso">
                 {fmtFecha(empleado.fecha_ingreso)} ({dayjs().diff(empleado.fecha_ingreso, 'year')} años de antigüedad)
               </Descriptions.Item>
@@ -242,6 +253,20 @@ export default function FichaEmpleadoPage() {
                 )}
               </Descriptions.Item>
               {empleado.fecha_baja && <Descriptions.Item label="Fecha de baja">{fmtFecha(empleado.fecha_baja)}</Descriptions.Item>}
+              {/* Renglón propio de ancho completo: pueden ser varios y se acomodan en más de una línea. */}
+              <Descriptions.Item label="Adicionales" span="filled">
+                {empleado.adicionales_nombres.length ? (
+                  <Space size={[6, 6]} wrap>
+                    {empleado.adicionales_nombres.map((a) => (
+                      <Tag key={a} color="geekblue" bordered={false} style={{ marginInlineEnd: 0 }}>
+                        {a}
+                      </Tag>
+                    ))}
+                  </Space>
+                ) : (
+                  '—'
+                )}
+              </Descriptions.Item>
               <Descriptions.Item label="Teléfono">{empleado.telefono || '—'}</Descriptions.Item>
               <Descriptions.Item label="Email" span="filled">{empleado.email || '—'}</Descriptions.Item>
             </Descriptions>

@@ -135,3 +135,68 @@ class EtiquetaArticuloTests(TestCase):
         Novedad.objects.create(empleado=empleado, tipo_id=r.data["id"], fecha_desde=date(2026, 9, 15), fecha_hasta=date(2026, 9, 15), dias=1)
         fila = api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data["empleados"][0]
         self.assertEqual((fila["novedades"][0]["etiqueta"], fila["novedades"][0]["tipo"]), ("ART.36", "Art. 36 - Día de cumpleaños"))
+
+
+class HorarioEInactivosTests(TestCase):
+    """Al mirar hoy, quien no tiene licencias pero está fuera de su horario figura Inactivo."""
+
+    def setUp(self):
+        from datetime import time
+
+        from apps.organizacion.models import Cargo
+
+        self.d = datos_base()
+        self.api = cliente()
+        self.temprano = crear_empleado(self.d["area"], self.d["planta"], 1, hora_entrada=time(7, 0), hora_salida=time(13, 0))
+        self.normal = crear_empleado(self.d["area"], self.d["planta"], 2, cargo=Cargo.objects.create(nombre="JEFE"))
+        self.con_licencia = crear_empleado(self.d["area"], self.d["planta"], 3)
+
+    def estado(self, dia, hora, **params):
+        """Consulta el Inicio simulando que hoy es `dia` a la hora `hora`."""
+        from datetime import datetime, time
+        from unittest import mock
+
+        from django.utils import timezone
+
+        ahora = timezone.make_aware(datetime.combine(dia, time(*hora)))
+        Novedad.objects.get_or_create(empleado=self.con_licencia, tipo=self.d["medica"], fecha_desde=dia, fecha_hasta=dia, defaults={"dias": 1})
+        with mock.patch("apps.dashboard.services.hoy", return_value=dia), mock.patch(
+            "apps.dashboard.services.timezone.localtime", return_value=ahora
+        ):
+            return self.api.get("/api/dashboard/estado/", {"desde": dia.isoformat(), **params}).data
+
+    def test_dentro_y_fuera_de_horario(self):
+        lunes = date(2026, 9, 14)
+        datos = self.estado(lunes, (14, 0))  # 14:00: el de 7 a 13 ya se fue
+        filas = {e["id"]: e for e in datos["empleados"]}
+        self.assertEqual((filas[self.temprano.id]["en_horario"], filas[self.normal.id]["en_horario"]), (False, True))
+        self.assertEqual((filas[self.temprano.id]["horario"], filas[self.normal.id]["cargo"]), ("07:00 a 13:00", "JEFE"))
+        resumen = datos["resumen"]
+        self.assertEqual((resumen["total"], resumen["trabajando"], resumen["inactivos"], resumen["no_trabajando"]), (3, 1, 1, 1))
+        self.assertTrue(datos["es_hoy"])
+        # Filtros de estado
+        ids = lambda estado: {e["id"] for e in self.estado(lunes, (14, 0), estado=estado)["empleados"]}
+        self.assertEqual(ids("trabajando"), {self.normal.id})
+        self.assertEqual(ids("inactivo"), {self.temprano.id})
+
+    def test_fin_de_semana_todos_inactivos(self):
+        sabado = date(2026, 9, 19)
+        resumen = self.estado(sabado, (10, 0))["resumen"]
+        self.assertEqual((resumen["trabajando"], resumen["inactivos"]), (0, 2))
+
+    def test_otra_fecha_no_aplica_horario(self):
+        datos = self.api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data
+        self.assertIsNone(datos["resumen"]["inactivos"])
+        self.assertTrue(all(e["en_horario"] is None for e in datos["empleados"]))
+        self.assertEqual(datos["resumen"]["trabajando"], 3)
+
+    def test_area_acortada_en_la_tarjeta(self):
+        from apps.organizacion.models import UnidadOrganizativa
+
+        infra = UnidadOrganizativa.objects.get(nombre="Dirección de Infraestructura")
+        depto = UnidadOrganizativa.objects.create(nombre="DEPARTAMENTO DE SOPORTE TÉCNICO", tipo="AREA", padre=infra)
+        en_depto = crear_empleado(depto, self.d["planta"], 8)
+        directo = crear_empleado(infra, self.d["planta"], 9)
+        filas = {e["id"]: e for e in self.api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data["empleados"]}
+        self.assertEqual((filas[en_depto.id]["area"], filas[directo.id]["area"]), ("SOPORTE TÉCNICO", ""))
+        self.assertEqual(filas[en_depto.id]["nombre_tarjeta"], "Apellido8, Nombre8")

@@ -13,7 +13,15 @@ import type { Catalogo, DiaNoLaborable, Opcion } from '@/core/api/types';
 import { Can } from '@/core/auth/guards';
 import CrudPage, { type CampoCrud } from '@/core/components/CrudPage';
 import PageHeader from '@/core/components/PageHeader';
-import { modalidadesApi, noLaborablesApi, tiposNovedadApi, type Modalidad, type TipoNovedad } from '@/shared/api/catalogos';
+import {
+  adicionalesApi,
+  cargosApi,
+  modalidadesApi,
+  noLaborablesApi,
+  tiposNovedadApi,
+  type Modalidad,
+  type TipoNovedad,
+} from '@/shared/api/catalogos';
 import { insumosApi } from '@/shared/api/patrimonio';
 import { estadosLineaApi, proveedoresApi, tiposSimApi } from '@/shared/api/servicios';
 import { TipoNovedadSelect } from '@/shared/components/Selects';
@@ -40,6 +48,28 @@ export function TiposInsumoPage() {
       titulo="Categoría de insumos"
       recurso={insumosApi}
       permiso="patrimonio.tipoinsumo"
+      campos={[...camposBase(), ...camposFinales()]}
+    />
+  );
+}
+
+export function CargosPage() {
+  return (
+    <CrudPage<Catalogo>
+      titulo="Cargos"
+      recurso={cargosApi}
+      permiso="organizacion.cargo"
+      campos={[...camposBase(), ...camposFinales()]}
+    />
+  );
+}
+
+export function AdicionalesPage() {
+  return (
+    <CrudPage<Catalogo>
+      titulo="Adicionales"
+      recurso={adicionalesApi}
+      permiso="organizacion.adicional"
       campos={[...camposBase(), ...camposFinales()]}
     />
   );
@@ -256,7 +286,7 @@ export function NoLaborablesPage() {
           valorInicial: 'ASUETO',
           renderTabla: (_, fila) => <Tag>{fila.tipo_display}</Tag>,
         },
-        { nombre: 'motivo', etiqueta: 'Motivo', tipo: 'texto', requerido: true },
+        { nombre: 'motivo', etiqueta: 'Motivo', tipo: 'texto', requerido: true, ayuda: 'Se guarda en mayúsculas.' },
         { nombre: 'norma', etiqueta: 'Resolución / decreto', tipo: 'texto', ayuda: 'Número de la norma que lo otorga, si corresponde.' },
         { nombre: 'observaciones', etiqueta: 'Observaciones', tipo: 'textarea' },
       ]}

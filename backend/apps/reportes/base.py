@@ -21,6 +21,7 @@ FILTROS_DISPONIBLES = {
     "situacion_revista": "Situación de revista",
     "tipo_saldo": "Artículo con saldo",
     "tipo_insumo": "Categoría de insumo",
+    "adicional": "Adicional",
     "situacion_cargo": "Situación del cargo",
 }
 

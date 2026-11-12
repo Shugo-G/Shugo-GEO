@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { Badge, Empty, Tag, Tooltip, Typography } from 'antd';
+import { ClockCircleOutlined } from '@ant-design/icons';
 import { fmtFechaCorta } from '@/core/utils/format';
-import { COLOR_ACTIVO } from '@/app/theme';
+import { COLOR_ACTIVO, COLOR_INACTIVO } from '@/app/theme';
 import IconoPersona from '@/shared/components/IconoPersona';
 import { ConGorro, Confeti, ListonCumple } from './Cumpleanios';
-import type { EstadoPersonal, FilaEstado } from '../api';
+import { esInactivo, type EstadoPersonal, type FilaEstado } from '../api';
 
 interface Props {
   datos: EstadoPersonal;
@@ -19,35 +20,33 @@ function novedadPrincipal(fila: FilaEstado) {
 }
 
 function colorEstado(fila: FilaEstado): string {
-  return novedadPrincipal(fila)?.color ?? COLOR_ACTIVO;
+  return novedadPrincipal(fila)?.color ?? (esInactivo(fila) ? COLOR_INACTIVO : COLOR_ACTIVO);
 }
 
 /**
- * Orden de las tarjetas: primero los activos (sin licencias); después el resto
- * agrupado por artículo de licencia, en el orden configurado; dentro de cada
- * grupo, alfabético.
+ * Orden de las tarjetas: primero los activos, después los inactivos (fuera de
+ * horario) y por último el resto agrupado por artículo de licencia, en el orden
+ * configurado; dentro de cada grupo, alfabético.
  */
 function ordenarAgentes(filas: FilaEstado[], ordenArticulos: number[]): FilaEstado[] {
   const posicion = (fila: FilaEstado) => {
     const n = novedadPrincipal(fila);
-    if (!n) return -1;
+    if (!n) return esInactivo(fila) ? -1 : -2;
     const i = ordenArticulos.indexOf(n.tipo_id);
     return i === -1 ? ordenArticulos.length : i;
   };
   return [...filas].sort((a, b) => posicion(a) - posicion(b) || a.nombre.localeCompare(b.nombre));
 }
 
-/** Área (o unidad) dentro de la dirección; vacío si depende directamente de la dirección. */
-function subunidad(fila: FilaEstado): string | null {
-  const partes = fila.unidad_ruta.split(' › ');
-  return fila.unidad === fila.direccion ? null : partes.slice(partes.indexOf(fila.direccion) + 1).join(' › ') || fila.unidad;
-}
-
-/** Tarjeta de tamaño fijo: ícono con el color del estado, nombre, área y licencia (etiqueta corta); la línea de color va abajo. */
+/**
+ * Tarjeta de tamaño fijo: ícono con el color del estado, nombre corto, cargo (o el área
+ * acortada si no tiene cargo), horario y estado (Activo / Inactivo / licencia).
+ */
 function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   const navigate = useNavigate();
   const color = colorEstado(fila);
-  const area = subunidad(fila);
+  const detalle = fila.cargo || fila.area;
+  const inactivo = esInactivo(fila);
   const principal = novedadPrincipal(fila);
   return (
     <div
@@ -68,12 +67,18 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
       ) : (
         <IconoPersona color={color} tamanio={64} />
       )}
-      <Typography.Text strong className="tarjeta-agente-nombre" ellipsis={{ tooltip: fila.nombre }}>
-        {fila.nombre}
+      <Tooltip title={fila.nombre} mouseEnterDelay={0.4}>
+        <Typography.Text strong className="tarjeta-agente-nombre">
+          {fila.nombre_tarjeta}
+        </Typography.Text>
+      </Tooltip>
+      {/* Cargo; si no tiene, el área acortada. Se reserva el renglón para que todas las tarjetas queden alineadas. */}
+      <Typography.Text type="secondary" className="tarjeta-agente-area" ellipsis={{ tooltip: detalle || undefined }}>
+        {detalle || '\u00a0'}
       </Typography.Text>
-      <Typography.Text type="secondary" className="tarjeta-agente-area" ellipsis={{ tooltip: area ?? undefined }}>
-        {area ?? 'Personal de la dirección'}
-      </Typography.Text>
+      <span className="tarjeta-agente-horario">
+        <ClockCircleOutlined /> {fila.horario}
+      </span>
       <div className="tarjeta-agente-estado">
         {principal ? (
           // Tamaño fijo: se muestra la licencia principal (etiqueta corta) y, si hay más, "+N"; el detalle va en el tooltip.
@@ -99,6 +104,10 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
                 )}
               </div>
             </div>
+          </Tooltip>
+        ) : inactivo ? (
+          <Tooltip title={`Fuera de su horario (${fila.horario})`}>
+            <Badge color={COLOR_INACTIVO} text="Inactivo" />
           </Tooltip>
         ) : (
           <Badge color={COLOR_ACTIVO} text="Activo" />
@@ -140,12 +149,12 @@ export default function TarjetasPorDireccion({ datos, filas, ocultarVacias }: Pr
   return (
     <div className="columnas-direccion" style={{ gridTemplateColumns: `repeat(${columnas.length}, minmax(260px, 1fr))` }}>
       {columnas.map((c) => {
-        const trabajando = c.filas.filter((f) => f.trabajando).length;
+        const trabajando = c.filas.filter((f) => f.trabajando && !esInactivo(f)).length;
         return (
           <section key={c.clave} className="columna-direccion">
             <header>
               <Typography.Text strong>{c.titulo}</Typography.Text>
-              <Tooltip title={datos.es_un_dia ? 'Trabajando / total' : 'Sin ausencias en el período / total'}>
+              <Tooltip title={datos.es_hoy ? 'Trabajando ahora / total' : datos.es_un_dia ? 'Sin licencias / total' : 'Sin ausencias en el período / total'}>
                 <span className="columna-direccion-conteo">
                   <span style={{ color: COLOR_ACTIVO, fontWeight: 600 }}>{trabajando}</span> / {c.filas.length}
                 </span>

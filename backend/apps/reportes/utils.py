@@ -12,6 +12,10 @@ def fmt_fecha(fecha) -> str:
     return fecha.strftime("%d/%m/%Y") if fecha else "—"
 
 
+def fmt_cuit(cuit: str) -> str:
+    return f"{cuit[:2]}-{cuit[2:10]}-{cuit[10]}" if len(cuit or "") == 11 else (cuit or "")
+
+
 def describir_filtros(params, nombres: list[str]) -> str:
     """Texto legible con los filtros aplicados, para encabezados de Excel/PDF."""
     partes = []
@@ -30,6 +34,10 @@ def describir_filtros(params, nombres: list[str]) -> str:
         hasta = parse_fecha_param(params.get("hasta"), "hasta")
         if desde or hasta:
             partes.append(f"Período: {fmt_fecha(desde)} al {fmt_fecha(hasta)}")
+    if "adicional" in nombres:
+        from apps.organizacion.models import Adicional
+
+        nombres_de(Adicional, "adicional", "Adicional")
     if "tipo_insumo" in nombres:
         from apps.patrimonio.models import TipoInsumo
 

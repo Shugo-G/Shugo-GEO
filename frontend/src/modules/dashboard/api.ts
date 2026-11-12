@@ -7,6 +7,15 @@ export interface FilaEstado {
   id: number;
   legajo: string;
   nombre: string;
+  /** Nombre corto para la tarjeta (etiqueta o primer apellido y primer nombre). */
+  nombre_tarjeta: string;
+  cargo: string;
+  /** Área acortada ("SOPORTE TÉCNICO"); vacío si depende directamente de la dirección. */
+  area: string;
+  /** "08:00 a 15:00" */
+  horario: string;
+  /** Sólo al mirar hoy: está dentro de su horario en un día hábil. null = no aplica. */
+  en_horario: boolean | null;
   unidad_id: number;
   unidad: string;
   unidad_tipo: string;
@@ -34,8 +43,10 @@ export interface EstadoPersonal {
   desde: string;
   hasta: string;
   es_un_dia: boolean;
+  es_hoy: boolean;
   dia_habil: boolean;
-  resumen: { total: number; trabajando: number; no_trabajando: number; por_tipo: ResumenArticulo[] };
+  /** `inactivos`: sin licencias pero fuera de horario; null cuando no se mira el día de hoy. */
+  resumen: { total: number; trabajando: number; inactivos: number | null; no_trabajando: number; por_tipo: ResumenArticulo[] };
   empleados: FilaEstado[];
   /** Columnas de la vista por dirección (Dirección General y sus direcciones), en orden. */
   grupos: { id: number; nombre: string; tipo: string }[];
@@ -53,3 +64,6 @@ export function useEstadoPersonal(params: Params) {
     placeholderData: keepPreviousData,
   });
 }
+
+/** Sin licencias pero fuera de su horario (sólo al mirar el día de hoy). */
+export const esInactivo = (fila: Pick<FilaEstado, 'trabajando' | 'en_horario'>) => fila.trabajando && fila.en_horario === false;

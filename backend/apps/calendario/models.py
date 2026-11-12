@@ -39,3 +39,8 @@ class DiaNoLaborable(TimeStampedModel):
 
     def __str__(self):
         return f"{self.fecha:%d/%m/%Y} - {self.motivo}"
+
+    def save(self, *args, **kwargs):
+        # El motivo se guarda siempre en mayúsculas (carga manual y feriados nacionales).
+        self.motivo = (self.motivo or "").strip().upper()
+        super().save(*args, **kwargs)

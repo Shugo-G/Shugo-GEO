@@ -47,6 +47,7 @@ export default function EmpleadosPage() {
       sorter: true,
       render: (ruta: string) => <RutaUnidad ruta={ruta} />,
     },
+    { title: 'Cargo', dataIndex: 'cargo_nombre', responsive: ['xl'], render: (v) => v ?? '—' },
     { title: 'Modalidad', dataIndex: 'modalidad_nombre', key: 'modalidad__nombre', sorter: true, responsive: ['md'] },
     { title: 'Ingreso', dataIndex: 'fecha_ingreso', key: 'fecha_ingreso', sorter: true, render: fmtFecha, responsive: ['lg'], width: 110 },
     {

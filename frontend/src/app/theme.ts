@@ -21,3 +21,5 @@ export const theme: ThemeConfig = {
 
 /** Color del estado "Activo / trabajando" (no es una categoría configurable). */
 export const COLOR_ACTIVO = '#52c41a';
+/** Sin licencias pero fuera de su horario (sólo al mirar el día de hoy). */
+export const COLOR_INACTIVO = '#8c8c8c';

@@ -1,7 +1,9 @@
 """Datos iniciales del módulo (idempotente)."""
 from django.conf import settings
 
-from .models import ModalidadContratacion, TipoUnidad, UnidadOrganizativa
+from .models import Adicional, ModalidadContratacion, TipoUnidad, UnidadOrganizativa
+
+ADICIONALES = ["CAPACITADOR", "FUNCIÓN ESPECÍFICA", "GUARDIA PASIVA", "FALLO DE CAJA"]
 
 MODALIDADES = [
     # nombre, usa_dni_como_legajo, requiere_fecha_fin, color, orden
@@ -32,3 +34,6 @@ def cargar():
             ModalidadContratacion.objects.create(
                 nombre=nombre, usa_dni_como_legajo=usa_dni, requiere_fecha_fin=requiere_fin, color=color, orden=orden
             )
+    if not Adicional.objects.exists():
+        for orden, nombre in enumerate(ADICIONALES, start=1):
+            Adicional.objects.create(nombre=nombre, orden=orden)
