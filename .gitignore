@@ -44,3 +44,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 ~$*.docx
+
+# --- Respaldos de producción (datos personales: nunca al repo) ---
+backups/
+*.dump
