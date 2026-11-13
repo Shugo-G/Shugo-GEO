@@ -39,13 +39,12 @@ function ordenarAgentes(filas: FilaEstado[], ordenArticulos: number[]): FilaEsta
 }
 
 /**
- * Tarjeta de tamaño fijo: ícono con el color del estado, nombre corto, cargo (o el área
- * acortada si no tiene cargo), horario y estado (Activo / Inactivo / licencia).
+ * Tarjeta de tamaño fijo: ícono con el color del estado, nombre corto, cargo y debajo el
+ * nombre corto de la unidad (sin cargo: el nombre completo de la unidad), horario y estado.
  */
 function TarjetaAgente({ fila }: { fila: FilaEstado }) {
   const navigate = useNavigate();
   const color = colorEstado(fila);
-  const detalle = fila.cargo || fila.area;
   const inactivo = esInactivo(fila);
   const principal = novedadPrincipal(fila);
   return (
@@ -72,10 +71,19 @@ function TarjetaAgente({ fila }: { fila: FilaEstado }) {
           {fila.nombre_tarjeta}
         </Typography.Text>
       </Tooltip>
-      {/* Cargo; si no tiene, el área acortada. Se reserva el renglón para que todas las tarjetas queden alineadas. */}
-      <Typography.Text type="secondary" className="tarjeta-agente-area" ellipsis={{ tooltip: detalle || undefined }}>
-        {detalle || '\u00a0'}
-      </Typography.Text>
+      {/* Siempre dos renglones: cargo + unidad corta o, sin cargo, el nombre completo de la unidad. */}
+      <Tooltip title={fila.cargo ? `${fila.cargo} · ${fila.unidad}` : fila.unidad} mouseEnterDelay={0.4}>
+        <div className="tarjeta-agente-detalle">
+          {fila.cargo ? (
+            <>
+              <span className="tarjeta-agente-cargo">{fila.cargo}</span>
+              <span className="tarjeta-agente-unidad">{fila.unidad_corta}</span>
+            </>
+          ) : (
+            <span className="tarjeta-agente-unidad-completa">{fila.unidad}</span>
+          )}
+        </div>
+      </Tooltip>
       <span className="tarjeta-agente-horario">
         <ClockCircleOutlined /> {fila.horario}
       </span>

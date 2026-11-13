@@ -264,7 +264,7 @@ body {
 .tarjeta-agente {
   /* Tamaño fijo: todas las filas quedan parejas (una sola licencia visible + "+N"). */
   position: relative;
-  height: 208px;
+  height: 224px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -313,9 +313,32 @@ body {
   white-space: normal !important;
   word-break: break-word;
 }
-.tarjeta-agente-area {
-  max-width: 100%;
+.tarjeta-agente-detalle {
+  /* Dos renglones fijos: cargo + unidad, o el nombre completo de la unidad. */
+  width: 100%;
+  height: 2.6em;
   font-size: 11.5px;
+  line-height: 1.3;
+  color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.tarjeta-agente-cargo,
+.tarjeta-agente-unidad {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tarjeta-agente-cargo {
+  color: rgba(0, 0, 0, 0.65);
+}
+.tarjeta-agente-unidad-completa {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
 }
 .tarjeta-agente-estado {
   margin-top: 4px;
@@ -778,7 +801,7 @@ body {
 }
 .organigrama-nodo {
   display: inline-block;
-  width: 168px;
+  width: 184px;
   padding: 8px 10px;
   background: #fff;
   border: 1px solid #e3e8ee;

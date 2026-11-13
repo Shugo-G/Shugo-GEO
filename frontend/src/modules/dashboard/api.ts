@@ -11,7 +11,8 @@ export interface FilaEstado {
   nombre_tarjeta: string;
   cargo: string;
   /** Área acortada ("SOPORTE TÉCNICO"); vacío si depende directamente de la dirección. */
-  area: string;
+  /** Nombre corto de la unidad (sin el prefijo \u201cDEPARTAMENTO DE\u201d). El completo es `unidad`. */
+  unidad_corta: string;
   /** "08:00 a 15:00" */
   horario: string;
   /** Sólo al mirar hoy: está dentro de su horario en un día hábil. null = no aplica. */

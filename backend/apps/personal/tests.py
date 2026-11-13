@@ -180,3 +180,28 @@ class BajaCierraLicenciasTests(TestCase):
         self.assertEqual((futura.anulada, futura.motivo_anulacion), (True, "Baja del agente"))
         # Editar a alguien que ya está de baja no vuelve a tocar sus licencias
         self.assertEqual(api.patch(f"/api/personal/empleados/{e.id}/", {"observaciones": "x"}, format="json").status_code, 200)
+
+
+class DocumentosEmpleadoTests(TestCase):
+    def test_adjunto_del_acto_del_cargo(self):
+        import os
+        import tempfile
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.test import override_settings
+
+        from .models import DocumentoEmpleado
+
+        with tempfile.TemporaryDirectory() as media, override_settings(MEDIA_ROOT=media):
+            d = datos_base()
+            api = cliente()
+            e = crear_empleado(d["area"], d["planta"])
+            archivo = SimpleUploadedFile("decreto.pdf", b"%PDF-1.4 decreto", content_type="application/pdf")
+            r = api.post("/api/personal/documentos/", {"empleado": e.id, "archivo": archivo}, format="multipart")
+            self.assertEqual(r.status_code, 201, r.data)
+            self.assertEqual(api.get(f"/api/personal/empleados/{e.id}/").data["documentos_count"], 1)
+            descarga = api.get(f"/api/personal/documentos/{r.data['id']}/descargar/")
+            self.assertEqual(b"".join(descarga.streaming_content), b"%PDF-1.4 decreto")
+            ruta = DocumentoEmpleado.objects.get().archivo.path
+            self.assertEqual(api.delete(f"/api/personal/documentos/{r.data['id']}/").status_code, 204)
+            self.assertFalse(os.path.exists(ruta))

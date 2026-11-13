@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
 import { Alert, App, Col, DatePicker, Divider, Form, Input, Modal, Row, Select, TimePicker } from 'antd';
+import type { UploadFile } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { erroresDeCampos, mensajeError } from '@/core/api/client';
 import { FORMATO_FECHA, aApi, deApi } from '@/core/utils/format';
 import { modalidadesApi } from '@/shared/api/catalogos';
-import { SITUACIONES, empleadosApi, type Empleado, type SituacionRevista } from '@/shared/api/empleados';
+import { usePermiso } from '@/core/auth/AuthContext';
+import { PERMISOS_DOCUMENTOS_EMPLEADO, SITUACIONES, documentosEmpleadoApi, empleadosApi, type Empleado, type SituacionRevista } from '@/shared/api/empleados';
+import { AdjuntosPendientes, subirPendientes } from '@/shared/components/ListaDocumentos';
+import DocumentosEmpleado from './DocumentosEmpleado';
 import { AdicionalSelect, CargoSelect, ModalidadSelect, UnidadSelect } from '@/shared/components/Selects';
 
 interface Props {
@@ -20,6 +24,8 @@ type Valores = Omit<Empleado, 'fecha_nacimiento' | 'fecha_ingreso' | 'fecha_fin_
   fecha_baja?: Dayjs | null;
   /** Horario habitual [entrada, salida]. */
   horario_rango?: [Dayjs, Dayjs] | null;
+  /** Sólo en el alta: archivos del acto del cargo, que se suben después de crear al agente. */
+  adjuntos?: UploadFile[];
 };
 
 const HORA = 'HH:mm';
@@ -34,6 +40,8 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
   const modalidadId = Form.useWatch('modalidad', form);
   const situacion = Form.useWatch('situacion_revista', form) as SituacionRevista | undefined;
   const cargoId = Form.useWatch('cargo', form);
+  const puedeAdjuntar = usePermiso(PERMISOS_DOCUMENTOS_EMPLEADO.subir);
+  const puedeVerAdjuntos = usePermiso(PERMISOS_DOCUMENTOS_EMPLEADO.ver);
   const pasaABaja = situacion === 'BAJA' && !!empleado && empleado.situacion_revista !== 'BAJA';
   const modalidad = modalidades.find((m) => m.id === modalidadId);
 
@@ -55,7 +63,7 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
   }, [open, empleado, form]);
 
   const onGuardar = async () => {
-    const { horario_rango, ...v } = await form.validateFields();
+    const { horario_rango, adjuntos, ...v } = await form.validateFields();
     const [entrada, salida] = horario_rango ?? HORARIO_POR_DEFECTO;
     try {
       const resultado = await guardar.mutateAsync({
@@ -76,7 +84,12 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
         fecha_fin_contrato: aApi(v.fecha_fin_contrato) ?? null,
         fecha_baja: aApi(v.fecha_baja) ?? null,
       });
-      message.success(empleado ? 'Empleado actualizado' : 'Empleado dado de alta');
+      // En el alta, los adjuntos elegidos se suben después de crear al agente.
+      const fallidos = adjuntos?.length && v.cargo
+        ? await subirPendientes(adjuntos, (archivo) => documentosEmpleadoApi.subir(resultado.id, archivo))
+        : [];
+      if (fallidos.length) message.warning(`Empleado guardado, pero no se pudo adjuntar: ${fallidos.join(', ')}. Puede hacerlo desde Editar.`);
+      else message.success(empleado ? 'Empleado actualizado' : 'Empleado dado de alta');
       onClose(resultado);
     } catch (e) {
       const campos = erroresDeCampos(e);
@@ -219,10 +232,26 @@ export default function EmpleadoFormModal({ open, onClose, empleado }: Props) {
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="cargo_acto_administrativo" label="Acto administrativo del cargo" extra="Por ejemplo: Resolución 109-2026.">
+            <Form.Item name="cargo_acto_administrativo" label="Acto administrativo del cargo" extra="Por ejemplo: DECRETO MUNICIPAL Nº 000/2026">
               <Input maxLength={120} disabled={!cargoId} />
             </Form.Item>
           </Col>
+          {/* Adjuntos del acto: al editar se administran en el momento; en el alta se suben al guardar. */}
+          {empleado
+            ? puedeVerAdjuntos && (!!cargoId || empleado.documentos_count > 0) && (
+                <Col xs={24}>
+                  <Form.Item label="Adjuntos del acto administrativo del cargo" extra="Si el agente cambia de cargo, los anteriores quedan como antecedentes.">
+                    <DocumentosEmpleado empleadoId={empleado.id} />
+                  </Form.Item>
+                </Col>
+              )
+            : puedeAdjuntar && !!cargoId && (
+                <Col xs={24}>
+                  <Form.Item name="adjuntos" label="Adjunto del acto administrativo del cargo" extra="Opcional. PDF o imagen del decreto o la resolución.">
+                    <AdjuntosPendientes texto="Adjuntar acto administrativo" />
+                  </Form.Item>
+                </Col>
+              )}
           <Col xs={24}>
             <Form.Item name="adicionales" label="Adicionales">
               <AdicionalSelect mode="multiple" maxTagCount={undefined} maxTagTextLength={undefined} placeholder="Capacitador, guardia pasiva..." />

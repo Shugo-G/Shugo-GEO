@@ -1,10 +1,12 @@
 import uuid
 from datetime import time
 
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from simple_history.models import HistoricalRecords
 
+from apps.core.archivos import ruta_adjunto
 from apps.core.models import TimeStampedModel
 
 dni_validator = RegexValidator(r"^\d{7,9}$", "El DNI debe tener entre 7 y 9 dígitos, sin puntos.")
@@ -95,7 +97,7 @@ class Empleado(TimeStampedModel):
         "organizacion.Cargo", verbose_name="cargo", on_delete=models.PROTECT, null=True, blank=True, related_name="empleados"
     )
     cargo_acto_administrativo = models.CharField(
-        "acto administrativo del cargo", max_length=120, blank=True, help_text="Por ejemplo: Resolución 109-2026."
+        "acto administrativo del cargo", max_length=120, blank=True, help_text="Por ejemplo: DECRETO MUNICIPAL Nº 000/2026."
     )
     adicionales = models.ManyToManyField("organizacion.Adicional", verbose_name="adicionales", blank=True, related_name="empleados")
 
@@ -144,3 +146,29 @@ class Empleado(TimeStampedModel):
         if self.hora_entrada <= self.hora_salida:
             return self.hora_entrada <= hora < self.hora_salida
         return hora >= self.hora_entrada or hora < self.hora_salida
+
+
+def _ruta_documento(instance, filename):
+    return ruta_adjunto("personal", filename)
+
+
+class DocumentoEmpleado(models.Model):
+    """
+    Adjunto de la ficha: el acto administrativo del cargo (decreto, resolución).
+    Si el agente cambia de cargo, los anteriores quedan como antecedentes.
+    """
+
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE, related_name="documentos")
+    archivo = models.FileField("archivo", upload_to=_ruta_documento)
+    nombre_original = models.CharField("nombre", max_length=255)
+    descripcion = models.CharField("descripción", max_length=255, blank=True)
+    subido = models.DateTimeField("subido", auto_now_add=True)
+    subido_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        verbose_name = "documento del empleado"
+        verbose_name_plural = "documentos del empleado"
+        ordering = ["-subido"]
+
+    def __str__(self):
+        return self.nombre_original

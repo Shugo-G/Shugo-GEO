@@ -190,7 +190,7 @@ class HorarioEInactivosTests(TestCase):
         self.assertTrue(all(e["en_horario"] is None for e in datos["empleados"]))
         self.assertEqual(datos["resumen"]["trabajando"], 3)
 
-    def test_area_acortada_en_la_tarjeta(self):
+    def test_unidad_corta_en_la_tarjeta(self):
         from apps.organizacion.models import UnidadOrganizativa
 
         infra = UnidadOrganizativa.objects.get(nombre="Dirección de Infraestructura")
@@ -198,5 +198,7 @@ class HorarioEInactivosTests(TestCase):
         en_depto = crear_empleado(depto, self.d["planta"], 8)
         directo = crear_empleado(infra, self.d["planta"], 9)
         filas = {e["id"]: e for e in self.api.get("/api/dashboard/estado/", {"desde": "2026-09-15"}).data["empleados"]}
-        self.assertEqual((filas[en_depto.id]["area"], filas[directo.id]["area"]), ("SOPORTE TÉCNICO", ""))
+        self.assertEqual((filas[en_depto.id]["unidad_corta"], filas[en_depto.id]["unidad"]), ("SOPORTE TÉCNICO", "DEPARTAMENTO DE SOPORTE TÉCNICO"))
+        # Quien depende directo de una dirección también muestra su unidad
+        self.assertEqual((filas[directo.id]["unidad_corta"], filas[directo.id]["unidad"]), ("Infraestructura", "Dirección de Infraestructura"))
         self.assertEqual(filas[en_depto.id]["nombre_tarjeta"], "Apellido8, Nombre8")

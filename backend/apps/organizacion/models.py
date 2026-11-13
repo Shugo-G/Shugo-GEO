@@ -60,7 +60,7 @@ class UnidadOrganizativa(CatalogoBase):
         help_text="La unidad fue creada formalmente; requiere indicar el acto administrativo.",
     )
     acto_administrativo = models.CharField(
-        "acto administrativo", max_length=120, blank=True, help_text="Por ejemplo: Resolución 109-2026."
+        "acto administrativo", max_length=120, blank=True, help_text="Por ejemplo: DECRETO MUNICIPAL Nº 000/2026."
     )
 
     history = HistoricalRecords()

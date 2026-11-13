@@ -1,7 +1,9 @@
 from django.db.models import Count, Sum
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.core.archivos import descargar_adjunto
 from apps.core.fechas import hoy
 from apps.core.viewsets import AuditedModelViewSet
 from apps.novedades.models import Novedad
@@ -9,8 +11,8 @@ from apps.novedades.selectors import novedades_por_empleado, resumir_novedad
 from apps.vacaciones.services import saldos_por_empleado
 
 from .filters import EmpleadoFilter
-from .models import Empleado, SituacionRevista
-from .serializers import EmpleadoSerializer
+from .models import DocumentoEmpleado, Empleado, SituacionRevista
+from .serializers import DocumentoEmpleadoSerializer, EmpleadoSerializer
 
 
 class EmpleadoViewSet(AuditedModelViewSet):
@@ -19,6 +21,12 @@ class EmpleadoViewSet(AuditedModelViewSet):
     filterset_class = EmpleadoFilter
     search_fields = ["apellido", "nombre", "dni", "legajo", "email"]
     ordering_fields = ["apellido", "legajo", "fecha_ingreso", "unidad__nombre", "modalidad__nombre"]
+
+    def perform_destroy(self, instance):
+        archivos = [d.archivo for d in instance.documentos.all()]
+        instance.delete()  # si tiene licencias, saldos o bienes falla acá (409) y no se toca ningún archivo
+        for archivo in archivos:
+            archivo.delete(save=False)
 
     @action(detail=False, methods=["get"], url_path="situaciones")
     def situaciones(self, request):
@@ -73,3 +81,30 @@ class EmpleadoViewSet(AuditedModelViewSet):
                 ],
             }
         )
+
+
+class DocumentoEmpleadoViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Adjuntos de la ficha (acto administrativo del cargo). Se descargan sólo por la API."""
+
+    queryset = DocumentoEmpleado.objects.select_related("subido_por")
+    serializer_class = DocumentoEmpleadoSerializer
+    filterset_fields = ["empleado"]
+    pagination_class = None
+
+    def perform_create(self, serializer):
+        serializer.save(subido_por=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.archivo.delete(save=False)
+        instance.delete()
+
+    @action(detail=True, methods=["get"])
+    def descargar(self, request, pk=None):
+        documento = self.get_object()
+        return descargar_adjunto(documento.archivo, documento.nombre_original)

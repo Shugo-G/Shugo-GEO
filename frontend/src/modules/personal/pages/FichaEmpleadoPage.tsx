@@ -54,6 +54,8 @@ import BienesEmpleado from '@/shared/components/patrimonio/BienesEmpleado';
 import EmpleadoFormModal from '../components/EmpleadoFormModal';
 import IconoPersona from '@/shared/components/IconoPersona';
 import SaldosEmpleado from '../components/SaldosEmpleado';
+import DocumentosEmpleado from '../components/DocumentosEmpleado';
+import { PERMISOS_DOCUMENTOS_EMPLEADO } from '@/shared/api/empleados';
 
 export default function FichaEmpleadoPage() {
   const { id } = useParams();
@@ -72,6 +74,7 @@ export default function FichaEmpleadoPage() {
   const puedeVerSaldos = usePermiso('vacaciones.view_movimientosaldo');
   const puedeEditarMov = usePermiso('vacaciones.change_movimientosaldo');
   const puedeVerCambios = usePermiso('personal.change_empleado');
+  const puedeVerAdjuntos = usePermiso(PERMISOS_DOCUMENTOS_EMPLEADO.ver);
   const puedeVerPatrimonio = usePermiso('patrimonio.view_cargopatrimonial');
 
   // Vigentes y programadas por un lado; finalizadas, interrumpidas y anuladas en el historial.
@@ -238,7 +241,7 @@ export default function FichaEmpleadoPage() {
                 )}
               </Descriptions.Item>
               <Descriptions.Item label="Horario">{empleado.horario}</Descriptions.Item>
-              <Descriptions.Item label="N.º de proveedor">{empleado.numero_proveedor || '—'}</Descriptions.Item>
+              <Descriptions.Item label="Número de proveedor">{empleado.numero_proveedor || '—'}</Descriptions.Item>
 
               <Descriptions.Item label="Ingreso">
                 {fmtFecha(empleado.fecha_ingreso)} ({dayjs().diff(empleado.fecha_ingreso, 'year')} años de antigüedad)
@@ -271,6 +274,14 @@ export default function FichaEmpleadoPage() {
               <Descriptions.Item label="Email" span="filled">{empleado.email || '—'}</Descriptions.Item>
             </Descriptions>
             </div>
+            {puedeVerAdjuntos && (!!empleado.cargo || empleado.documentos_count > 0) && (
+              <div style={{ marginTop: 12 }}>
+                <Typography.Text strong>Acto administrativo del cargo</Typography.Text>
+                <div style={{ marginTop: 6 }}>
+                  <DocumentosEmpleado empleadoId={empleado.id} />
+                </div>
+              </div>
+            )}
             {empleado.observaciones && (
               <Alert type="info" message="Observaciones" description={empleado.observaciones} style={{ marginTop: 12, whiteSpace: 'pre-wrap' }} />
             )}

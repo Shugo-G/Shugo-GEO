@@ -47,10 +47,11 @@ def _fila_empleado(empleado, novedades, arbol: Arbol, dia: date | None = None, e
         "id": empleado.id,
         "legajo": empleado.legajo,
         "nombre": empleado.nombre_completo,
-        # Para la tarjeta del Inicio: nombre corto, cargo y, si no tiene cargo, el área acortada.
+        # Para la tarjeta del Inicio: nombre corto; con cargo → cargo + nombre corto de la unidad;
+        # sin cargo → nombre completo de la unidad ("unidad").
         "nombre_tarjeta": empleado.nombre_tarjeta,
         "cargo": empleado.cargo.nombre if empleado.cargo_id else "",
-        "area": "" if direccion and direccion.id == empleado.unidad_id else empleado.unidad.nombre_tarjeta,
+        "unidad_corta": empleado.unidad.nombre_tarjeta,
         "horario": empleado.horario,
         # Sólo al mirar hoy: dentro de su horario en un día hábil. None = no aplica (otra fecha o período).
         "en_horario": en_horario,

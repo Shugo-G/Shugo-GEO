@@ -6,7 +6,9 @@ from rest_framework import serializers
 from apps.organizacion.models import Adicional
 from apps.organizacion.selectors import Arbol
 
-from .models import Empleado, SituacionRevista
+from apps.core.archivos import tamanio_adjunto, validar_adjunto
+
+from .models import DocumentoEmpleado, Empleado, SituacionRevista
 
 
 def normalizar_cuit(valor: str) -> str:
@@ -40,6 +42,7 @@ class EmpleadoSerializer(serializers.ModelSerializer):
     cargo_nombre = serializers.CharField(source="cargo.nombre", read_only=True, default=None)
     adicionales = serializers.PrimaryKeyRelatedField(queryset=Adicional.objects.all(), many=True, required=False)
     adicionales_nombres = serializers.SerializerMethodField()
+    documentos_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Empleado
@@ -70,6 +73,7 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             "cargo",
             "cargo_nombre",
             "cargo_acto_administrativo",
+            "documentos_count",
             "adicionales",
             "adicionales_nombres",
             "telefono",
@@ -79,6 +83,9 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             "fecha_baja",
             "observaciones",
         ]
+
+    def get_documentos_count(self, obj):
+        return obj.documentos.count()
 
     def get_adicionales_nombres(self, obj):
         return [a.nombre for a in obj.adicionales.all()]
@@ -168,3 +175,24 @@ class EmpleadoSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             cerrar_por_baja(instance, instance.fecha_baja, getattr(request, "user", None))
         return instance
+
+
+class DocumentoEmpleadoSerializer(serializers.ModelSerializer):
+    subido_por_nombre = serializers.CharField(source="subido_por.__str__", read_only=True, default=None)
+    tamanio = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentoEmpleado
+        fields = ["id", "empleado", "archivo", "nombre_original", "descripcion", "subido", "subido_por_nombre", "tamanio"]
+        read_only_fields = ["nombre_original", "subido"]
+        extra_kwargs = {"archivo": {"write_only": True}}
+
+    def get_tamanio(self, obj):
+        return tamanio_adjunto(obj.archivo)
+
+    def validate_archivo(self, archivo):
+        return validar_adjunto(archivo)
+
+    def create(self, validated_data):
+        validated_data["nombre_original"] = validated_data["archivo"].name[:255]
+        return super().create(validated_data)

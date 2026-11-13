@@ -277,7 +277,7 @@ export default function EstructuraPage() {
                 name="acto_administrativo"
                 label="Acto administrativo"
                 rules={[{ required: true, whitespace: true, message: 'Indique el acto administrativo' }]}
-                extra="Por ejemplo: Resolución 109-2026."
+                extra="Por ejemplo: DECRETO MUNICIPAL Nº 000/2026"
               >
                 <Input maxLength={120} />
               </Form.Item>

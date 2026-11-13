@@ -1,6 +1,6 @@
 import { Tag, Tooltip, Typography } from 'antd';
 import { CheckCircleFilled } from '@ant-design/icons';
-import { TIPOS_UNIDAD, type NodoUnidad } from '@/shared/api/catalogos';
+import type { NodoUnidad } from '@/shared/api/catalogos';
 
 interface Props {
   arbol: NodoUnidad[];
@@ -10,7 +10,26 @@ interface Props {
 
 const COLORES: Record<string, string> = { DIRECCION_GENERAL: '#1f4e79', DIRECCION: '#1677ff', AREA: '#13c2c2' };
 
+/** "DIRECCIÓN DE SISTEMAS" → ["DIRECCIÓN", "DE SISTEMAS"]: el nombre se parte antes del primer "de". */
+function enDosRenglones(nombre: string): [string, string?] {
+  const partes = nombre.trim().match(/^(.+?)\s+(de\s.+)$/i);
+  return partes ? [partes[1], partes[2]] : [nombre];
+}
+
+/**
+ * Las unidades que dependen directo del padre (sin ser direcciones) van al medio
+ * y las direcciones se reparten hacia las puntas, respetando su orden.
+ */
+function ordenarHijos(hijos: NodoUnidad[]): NodoUnidad[] {
+  const direcciones = hijos.filter((h) => h.tipo === 'DIRECCION');
+  const directas = hijos.filter((h) => h.tipo !== 'DIRECCION');
+  if (!direcciones.length || !directas.length) return hijos;
+  const mitad = Math.ceil(direcciones.length / 2);
+  return [...direcciones.slice(0, mitad), ...directas, ...direcciones.slice(mitad)];
+}
+
 function Nodo({ nodo, onElegir }: { nodo: NodoUnidad; onElegir?: (nodo: NodoUnidad) => void }) {
+  const [renglon1, renglon2] = enDosRenglones(nodo.nombre);
   return (
     <li>
       <div
@@ -22,12 +41,15 @@ function Nodo({ nodo, onElegir }: { nodo: NodoUnidad; onElegir?: (nodo: NodoUnid
         onKeyDown={(e) => e.key === 'Enter' && onElegir?.(nodo)}
       >
         <Typography.Text strong className="organigrama-nombre">
-          {nodo.nombre}
+          {renglon1}
+          {renglon2 && (
+            <>
+              <br />
+              {renglon2}
+            </>
+          )}
         </Typography.Text>
         <div className="organigrama-detalle">
-          <Tag color={TIPOS_UNIDAD.find((t) => t.value === nodo.tipo)?.color} bordered={false} style={{ marginInlineEnd: 0 }}>
-            {nodo.tipo_display}
-          </Tag>
           <Tooltip title="Agentes activos directos / incluyendo sus dependientes">
             <span>
               <b>{nodo.empleados}</b>
@@ -44,7 +66,7 @@ function Nodo({ nodo, onElegir }: { nodo: NodoUnidad; onElegir?: (nodo: NodoUnid
       </div>
       {nodo.children.length > 0 && (
         <ul>
-          {nodo.children.map((h) => (
+          {ordenarHijos(nodo.children).map((h) => (
             <Nodo key={h.id} nodo={h} onElegir={onElegir} />
           ))}
         </ul>
